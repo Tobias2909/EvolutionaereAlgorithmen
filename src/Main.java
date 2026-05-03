@@ -1,7 +1,8 @@
+import java.io.IOException;
 import java.util.function.Function;
 
 public class Main {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         Function<double[], Double> f = Functions.ACKLEY;
 
         //Optimizer algorithm = new HillClimb(new double[]{4.5, -4.0}, 1, 20);
