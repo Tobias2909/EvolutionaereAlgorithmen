@@ -5,7 +5,6 @@ import io.jenetics.engine.Engine;
 import io.jenetics.engine.EvolutionResult;
 import io.jenetics.util.DoubleRange;
 
-import java.io.IOException;
 import java.util.function.Function;
 
 public class GeneticAlgorithm implements Optimizer {
@@ -14,9 +13,8 @@ public class GeneticAlgorithm implements Optimizer {
     private final double max;
     private final int populationSize;
     private final long generations;
-    private CsvWriter csv = new CsvWriter();
 
-    public GeneticAlgorithm(int dimensions, double min, double max, int populationSize, long generations) throws IOException {
+    public GeneticAlgorithm(int dimensions, double min, double max, int populationSize, long generations) {
         this.dimensions = dimensions;
         this.min = min;
         this.max = max;
@@ -25,7 +23,7 @@ public class GeneticAlgorithm implements Optimizer {
     }
 
     @Override
-    public double[] optimize(Function<double[], Double> f) throws IOException {
+    public double[] optimize(Function<double[], Double> f) {
         //Codec maps a Genotype<DoubleGene> to a double[] in [min, max]^dimensions
         Codec<double[], DoubleGene> codec = Codecs.ofVector(new DoubleRange(min, max), dimensions);
 
@@ -42,36 +40,24 @@ public class GeneticAlgorithm implements Optimizer {
                 .alterers(new Mutator<>(0.1), new MeanAlterer<>(0.6))
                 .build();
 
-
         //Run the evolution stream for a fixed number of generations and keep the best genotype
-
-        double[] result = codec.decode(
-                engine.stream()
-                        //Stop at n generations
-                        .limit(generations)
-                        // gather statistics
-                        .peek(res -> {
-                            try {
-                                long gen = res.generation();
-                                double best = res.bestFitness();
-                                double worst = res.worstFitness();
-
+        try (CsvWriter csv = new CsvWriter()) {
+            return codec.decode(
+                    engine.stream()
+                            //Stop at n generations
+                            .limit(generations)
+                            // gather statistics
+                            .peek(res -> {
                                 double avg = res.population()
                                         .stream()
                                         .mapToDouble(Phenotype::fitness)
                                         .average()
                                         .orElse(0.0);
-
-                                csv.writeLine(gen, best, worst, avg);
-
-                            } catch (IOException e) {
-                                e.printStackTrace();
-                            }
-                        })
-                        //Remember the best genotype
-                        .collect(EvolutionResult.toBestGenotype())
-        );
-        csv.close();
-        return result;
+                                csv.writeLine(res.generation(), res.bestFitness(), res.worstFitness(), avg);
+                            })
+                            //Remember the best genotype
+                            .collect(EvolutionResult.toBestGenotype())
+            );
+        }
     }
 }

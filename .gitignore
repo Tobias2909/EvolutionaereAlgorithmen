@@ -1,0 +1,6 @@
+# Compiled output
+out/
+*.class
+
+# Generated program output
+output.csv

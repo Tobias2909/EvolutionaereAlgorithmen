@@ -1,24 +1,34 @@
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
-public class CsvWriter {
+public class CsvWriter implements AutoCloseable {
 
-    private FileWriter writer;
+    private final FileWriter writer;
 
-    public CsvWriter() throws IOException {
-        writer = new FileWriter("output.csv");
-
-        // write header
-        writer.write("generation,best,worst,average\n");
+    public CsvWriter() {
+        try {
+            writer = new FileWriter("output.csv");
+            writer.write("generation,best,worst,average\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    // write one row per generation
-    public void writeLine(long generation, double best, double worst, double average) throws IOException {
-        writer.write(generation + "," + best + "," + worst + "," + average + "\n");
+    public void writeLine(long generation, double best, double worst, double average) {
+        try {
+            writer.write(generation + "," + best + "," + worst + "," + average + "\n");
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
-    // close file (IMPORTANT)
-    public void close() throws IOException {
-        writer.close();
+    @Override
+    public void close() {
+        try {
+            writer.close();
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 }
