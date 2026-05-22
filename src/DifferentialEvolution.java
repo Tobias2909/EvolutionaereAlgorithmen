@@ -101,7 +101,7 @@ public class DifferentialEvolution implements Optimizer {
 
         // Run for `generations` ticks, logging best/worst/average to CSV each generation
         // (same format as GeneticAlgorithm so plots stay comparable), then return the best.
-        try (CsvWriter csv = new CsvWriter()) {
+        try (CsvWriter csv = new CsvWriter("output_de.csv")) {
             return codec.decode(
                     engine.stream()
                             .limit(generations)

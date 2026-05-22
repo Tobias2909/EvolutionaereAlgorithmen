@@ -41,7 +41,7 @@ public class GeneticAlgorithm implements Optimizer {
                 .build();
 
         //Run the evolution stream for a fixed number of generations and keep the best genotype
-        try (CsvWriter csv = new CsvWriter()) {
+        try (CsvWriter csv = new CsvWriter("output_ga.csv")) {
             return codec.decode(
                     engine.stream()
                             //Stop at n generations
