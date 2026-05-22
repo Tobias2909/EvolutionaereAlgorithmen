@@ -8,7 +8,7 @@ public class Main {
         int dimensions = 2;
         double min = -5.12;
         double max = 5.12;
-        int populationSize = 10;
+        int populationSize = 50;
         long generations = 100;
 
         Optimizer ga = new GeneticAlgorithm(dimensions, min, max, populationSize, generations);
