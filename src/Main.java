@@ -8,7 +8,7 @@ public class Main {
         int dimensions = 2;
         double min = -5.12;
         double max = 5.12;
-        int populationSize = 50;
+        int populationSize = 10;
         long generations = 100;
 
         Optimizer ga = new GeneticAlgorithm(dimensions, min, max, populationSize, generations);
@@ -31,8 +31,8 @@ public class Main {
         System.out.println("=== Comparison ===");
         double gaFitness = f.apply(gaResult);
         double deFitness = f.apply(deResult);
-        System.out.printf("GA f(x) = %.6f%n", gaFitness);
-        System.out.printf("DE f(x) = %.6f%n", deFitness);
+        System.out.println("GA f(x) = " + gaFitness);
+        System.out.println("DE f(x) = " + deFitness);
         System.out.println("Winner: " + (gaFitness < deFitness ? "GA" : deFitness < gaFitness ? "DE" : "Tie"));
     }
 
