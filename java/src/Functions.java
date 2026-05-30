@@ -1,3 +1,5 @@
+package src;
+
 import java.util.function.Function;
 
 public final class Functions {

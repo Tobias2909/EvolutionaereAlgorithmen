@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="27d8f6ce-d32f-41af-b2d2-55beb593f1ce" name="Changes" comment="Add genetic algorithm and refactor optimization functions">
+      <change beforePath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/output.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/CsvWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/CsvWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/DifferentialEvolution.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Functions.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Functions.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/GeneticAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/HillClimb.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/HillClimb.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/Optimizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Optimizer.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -38,6 +48,65 @@
     &quot;accountId&quot;: &quot;3ad3dd73-56c6-4cab-a02c-8761dfe1753f&quot;
   }
 }</component>
+  <component name="NextEditCompletionFeaturesState">
+    <decayedCancelled>
+      <entry key="MS100" value="1.4003920038492446" />
+      <entry key="MS500" value="2.8516491639069654" />
+      <entry key="S2" value="5.164431414364741" />
+      <entry key="S5" value="6.1531997070181985" />
+      <entry key="S10" value="6.554876108944824" />
+      <entry key="S30" value="6.846482697366049" />
+      <entry key="S60" value="6.922577680477403" />
+      <entry key="M2" value="6.961121315872447" />
+      <entry key="M5" value="6.9844081128424165" />
+      <entry key="M10" value="6.992197303451127" />
+      <entry key="M15" value="6.994796700350016" />
+      <entry key="M30" value="6.997397598876683" />
+      <entry key="H1" value="6.998698611553179" />
+      <entry key="H2" value="6.999349258797724" />
+      <entry key="H4" value="6.999674617653199" />
+      <entry key="D1" value="6.999945767977444" />
+      <entry key="W1" value="6.999992252528253" />
+    </decayedCancelled>
+    <decayedSelected>
+      <entry key="MS100" value="0.0" />
+      <entry key="MS500" value="0.0" />
+      <entry key="S2" value="0.0" />
+      <entry key="S5" value="0.0" />
+      <entry key="S10" value="0.0" />
+      <entry key="S30" value="0.0" />
+      <entry key="S60" value="0.0" />
+      <entry key="M2" value="0.0" />
+      <entry key="M5" value="0.0" />
+      <entry key="M10" value="0.0" />
+      <entry key="M15" value="0.0" />
+      <entry key="M30" value="0.0" />
+      <entry key="H1" value="0.0" />
+      <entry key="H2" value="0.0" />
+      <entry key="H4" value="0.0" />
+      <entry key="D1" value="0.0" />
+      <entry key="W1" value="0.0" />
+    </decayedSelected>
+    <decayedShown>
+      <entry key="MS100" value="1.3309679994793338" />
+      <entry key="MS500" value="2.616802403631351" />
+      <entry key="S2" value="5.031322230488998" />
+      <entry key="S5" value="6.088566687009163" />
+      <entry key="S10" value="6.520289306205488" />
+      <entry key="S30" value="6.834407930890286" />
+      <entry key="S60" value="6.916469287096171" />
+      <entry key="M2" value="6.958049150112606" />
+      <entry key="M5" value="6.983174905901201" />
+      <entry key="M10" value="6.991579974188077" />
+      <entry key="M15" value="6.994384986045965" />
+      <entry key="M30" value="6.997191660949895" />
+      <entry key="H1" value="6.998595622387885" />
+      <entry key="H2" value="6.999297759163575" />
+      <entry key="H4" value="6.999648866573122" />
+      <entry key="D1" value="6.999941475955336" />
+      <entry key="W1" value="6.9999916393779404" />
+    </decayedShown>
+  </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 1,
   &quot;fromUser&quot;: false
@@ -55,20 +124,34 @@
     "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
     "RunOnceActivity.git.unshallow": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
     "git-widget-placeholder": "main",
+    "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "/home/tobi/Documents/EvolutionaereAlgorithmen/EvolutionaereAlgorithmen",
+    "last_opened_file_path": "C:/Users/guest/IdeaProjects/EvolutionaereAlgorithmen",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.15",
     "project.structure.side.proportion": "0.2",
-    "settings.editor.selected.configurable": "preferences.pluginManager"
+    "settings.editor.selected.configurable": "preferences.pluginManager",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\guest\IdeaProjects\EvolutionaereAlgorithmen" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
-      <option name="MAIN_CLASS_NAME" value="Main" />
+      <option name="MAIN_CLASS_NAME" value="src.Main" />
       <module name="EvolutionaereAlgorithmen" />
       <method v="2">
         <option name="Make" enabled="true" />
@@ -80,6 +163,14 @@
       </list>
     </recent_temporary>
   </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.24374.151" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.24374.151" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
     <task active="true" id="Default" summary="Default task">
       <changelist id="27d8f6ce-d32f-41af-b2d2-55beb593f1ce" name="Changes" comment="" />
@@ -87,6 +178,8 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1777720504653</updated>
+      <workItem from="1779377467290" duration="670000" />
+      <workItem from="1780149002694" duration="1863000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />

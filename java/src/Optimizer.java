@@ -1,3 +1,5 @@
+package src;
+
 import java.util.function.Function;
 
 public interface Optimizer {

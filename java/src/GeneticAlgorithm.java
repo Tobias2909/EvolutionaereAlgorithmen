@@ -1,3 +1,5 @@
+package src;
+
 import io.jenetics.*;
 import io.jenetics.engine.Codec;
 import io.jenetics.engine.Codecs;
