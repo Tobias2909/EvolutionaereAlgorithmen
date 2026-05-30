@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="27d8f6ce-d32f-41af-b2d2-55beb593f1ce" name="Changes" comment="Add genetic algorithm and refactor optimization functions">
-      <change beforePath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/output.csv" beforeDir="false" afterPath="$PROJECT_DIR$/output.csv" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/CsvWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/CsvWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/DifferentialEvolution.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Functions.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Functions.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/GeneticAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/HillClimb.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/HillClimb.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Main.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/Optimizer.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Optimizer.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/src/CsvWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/CsvWriter.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/java/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Main.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -127,7 +121,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Merging main",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/guest/IdeaProjects/EvolutionaereAlgorithmen",
@@ -179,7 +173,7 @@
       <option name="presentableId" value="Default" />
       <updated>1777720504653</updated>
       <workItem from="1779377467290" duration="670000" />
-      <workItem from="1780149002694" duration="1863000" />
+      <workItem from="1780149002694" duration="2517000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />

@@ -8,9 +8,9 @@ public class CsvWriter implements AutoCloseable {
 
     private final FileWriter writer;
 
-    public CsvWriter() {
+    public CsvWriter(String filename) {
         try {
-            writer = new FileWriter("output.csv");
+            writer = new FileWriter(filename);
             writer.write("generation,best,worst,average\n");
         } catch (IOException e) {
             throw new UncheckedIOException(e);

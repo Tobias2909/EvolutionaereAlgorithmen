@@ -1,5 +1,3 @@
-package src;
-
 import io.jenetics.Alterer;
 import io.jenetics.AltererResult;
 import io.jenetics.DoubleChromosome;
@@ -74,7 +72,7 @@ public class DifferentialEvolution implements Optimizer {
             throw new IllegalArgumentException("DE needs populationSize >= 4");
         }
 
-        // Same representation as src.GeneticAlgorithm: one DoubleChromosome of length `dimensions`,
+        // Same representation as GeneticAlgorithm: one DoubleChromosome of length `dimensions`,
         // each gene bounded to [min, max]. The codec decodes a Genotype back to double[].
         Codec<double[], DoubleGene> codec = Codecs.ofVector(new DoubleRange(min, max), dimensions);
 
@@ -102,8 +100,8 @@ public class DifferentialEvolution implements Optimizer {
                 .build();
 
         // Run for `generations` ticks, logging best/worst/average to CSV each generation
-        // (same format as src.GeneticAlgorithm so plots stay comparable), then return the best.
-        try (CsvWriter csv = new CsvWriter()) {
+        // (same format as GeneticAlgorithm so plots stay comparable), then return the best.
+        try (CsvWriter csv = new CsvWriter("output_de.csv")) {
             return codec.decode(
                     engine.stream()
                             .limit(generations)
