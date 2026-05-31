@@ -1,3 +1,5 @@
+package src;
+
 import io.jenetics.Alterer;
 import io.jenetics.AltererResult;
 import io.jenetics.DoubleChromosome;
@@ -14,6 +16,7 @@ import io.jenetics.util.DoubleRange;
 import io.jenetics.util.ISeq;
 import io.jenetics.util.MSeq;
 import io.jenetics.util.Seq;
+import src.Optimizer;
 
 import java.util.Random;
 import java.util.function.Function;

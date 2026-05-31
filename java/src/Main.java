@@ -1,3 +1,10 @@
+package src;
+
+import src.DifferentialEvolution;
+import src.Functions;
+import src.GeneticAlgorithm;
+import src.Optimizer;
+
 import java.util.function.Function;
 
 public class Main {
