@@ -7,6 +7,9 @@ import visualize
 # Kantenlänge des Labyrinths
 MAP_SIZE = 25
 
+# Maximale Schrittzahl pro Agent (Training und Visualisierung nutzen denselben Wert)
+MAX_STEPS = MAP_SIZE * MAP_SIZE//4
+
 
 class MapGenerator:
     """
@@ -93,7 +96,7 @@ class MapGenerator:
                     (agent.pos_y+1)*ts-ts*0.25, 
                     fill='orange')
 
-        for i in range(0,MAP_SIZE*5):
+        for i in range(0,MAX_STEPS):
             inputs = agent._get_map_env()
             output = agent.activate_net(inputs)
 
@@ -151,6 +154,9 @@ class Agent:
         """
         
         def valid_move(x, y):
+             # MIT Backtracking: besuchte Felder wieder betretbar -> Agent kann aus Sackgassen zurueck
+             #return x >= 0 and x < len(self.map) and y >= 0 and y < len(self.map[0]) and self.map[x][y] != 1 and self.map[x][y] == 0
+             # OHNE Backtracking: besuchte Felder gesperrt (obere Zeile auskommentieren, diese aktivieren)
              return x >= 0 and x < len(self.map) and y >= 0 and y < len(self.map[0]) and self.map[x][y] != 1 and (x,y) not in self.visited and self.map[x][y] == 0
         
         # TODO
@@ -160,13 +166,13 @@ class Agent:
 
         # Richtung bestimmen
         if direction == 0:  # oben
-            nx, ny = x - 1, y
-        elif direction == 1:  # unten
-            nx, ny = x + 1, y
-        elif direction == 2:  # links
-            nx, ny = x, y - 1
-        elif direction == 3:  # rechts
             nx, ny = x, y + 1
+        elif direction == 1:  # unten
+            nx, ny = x, y - 1
+        elif direction == 2:  # links
+            nx, ny = x - 1, y
+        elif direction == 3:  # rechts
+            nx, ny = x + 1, y
         else:
             return False
 
@@ -196,14 +202,15 @@ class Agent:
                 return 0
             else:
                 return self.map[x][y]
-        env.append(get_value(self.pos_x - 1, self.pos_y + 1)) # top left
-        env.append(get_value(self.pos_x, self.pos_y + 1)) # top middle
-        env.append(get_value(self.pos_x + 1, self.pos_y + 1)) # top right
-        env.append(get_value(self.pos_x - 1, self.pos_y)) # middle left
-        env.append(get_value(self.pos_x + 1, self.pos_y)) # middle right
-        env.append(get_value(self.pos_x - 1, self.pos_y - 1)) # bottom left
-        env.append(get_value(self.pos_x, self.pos_y - 1)) # bottom middle
-        env.append(get_value(self.pos_x + 1, self.pos_y - 1)) # bottom right
+        # map[x][y]: x = horizontal (links=-1, rechts=+1), y = vertikal (unten=-1, oben=+1)
+        env.append(get_value(self.pos_x - 1, self.pos_y + 1)) # oben links
+        env.append(get_value(self.pos_x, self.pos_y + 1)) # oben mitte
+        env.append(get_value(self.pos_x + 1, self.pos_y + 1)) # oben rechts
+        env.append(get_value(self.pos_x - 1, self.pos_y)) # mitte links
+        env.append(get_value(self.pos_x + 1, self.pos_y)) # mitte rechts
+        env.append(get_value(self.pos_x - 1, self.pos_y - 1)) # unten links
+        env.append(get_value(self.pos_x, self.pos_y - 1)) # unten mitte
+        env.append(get_value(self.pos_x + 1, self.pos_y - 1)) # unten rechts
         return env
 
 
@@ -214,7 +221,11 @@ class Agent:
         """
         
         # TODO
-        steps = MAP_SIZE * 5
+        steps = MAX_STEPS
+
+        # Startdistanz und kleinste je erreichte Distanz zum Ziel merken
+        start_dist = self._get_distance()
+        best_dist = start_dist
 
         for _ in range(steps):
 
@@ -228,18 +239,26 @@ class Agent:
             moved = self.move(direction)
 
             # small penalty to encourage efficiency
-            self.fitness -= 0.01
+            self.fitness -= 0.1
 
             # reward movement
             if moved:
                 self.fitness += 0.1
+
+            # naechste Annaeherung ans Ziel verfolgen
+            dist = self._get_distance()
+            if dist < best_dist:
+                best_dist = dist
 
             # goal reached
             if (self.pos_x, self.pos_y) == (self.goal_x, self.goal_y):
                 self.fitness += 10
                 break
 
-        return 
+        # Belohnung fuers Naeherkommen: je naeher das Ziel kam, desto hoeher
+        self.fitness += (start_dist - best_dist)
+
+        return
 
 
 # Creates agents with the given net and tests it on the given map
@@ -248,7 +267,12 @@ def eval_genomes(genomes, config):
         Testet jedes Genom mit einem Agenten.
     """
     
-    map = config.map
+    # NEUES Labyrinth pro Generation -> Netz muss generalisieren statt auswendig lernen.
+    #generator.generate()
+    # FESTES Labyrinth: obere Zeile auskommentieren, dann bleibt das beim Start erzeugte Labyrinth.
+    map = generator.map
+    config.map = map
+
     for genome_id, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
         agent = Agent(net)
@@ -260,7 +284,7 @@ def eval_genomes(genomes, config):
 
     return
 
-# Erzeugen einer Zufallskarte der Größe 20x20
+# Erzeugen einer Zufallskarte der Größe MAP_SIZE x MAP_SIZE
 generator = MapGenerator(MAP_SIZE, (0, 0), (MAP_SIZE-1, MAP_SIZE-1))
 generator.generate()
 
