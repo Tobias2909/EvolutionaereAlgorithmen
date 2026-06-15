@@ -65,6 +65,26 @@ public class Zug {
 
     }
 
+    public static class GetRemaining extends Operation {
+
+        @Override
+        public String name() {
+            return "GET_REMAINING";
+        }
+
+        @Override
+        public int arity() {
+            return 0;
+        }
+
+        @Override
+        public Double apply(Double[] t) {
+            // Entfernung bis zum Zielbahnhof -> erlaubt "bremsen, wenn nah".
+            return zug.getRestEntfernung();
+        }
+
+    }
+
     public static class IfElse extends Operation {
 
         @Override
@@ -97,18 +117,28 @@ public class Zug {
 
         @Override
         public Double apply(Double[] v) {
-            zug.setGeschwindigkeit(v[0]);
+            // Das GP-Programm gibt eine WUNSCH-Geschwindigkeit vor. Wie schnell
+            // der Zug sie tatsaechlich annimmt, regelt tick() ueber die
+            // Beschleunigung/Bremsverzoegerung.
+            zug.setZielGeschwindigkeit(v[0]);
             return v[0];
         }
 
     }
 
+    // Plausible (nicht physikalisch exakte) Grenzwerte:
+    public  static final double ZIEL      = 1000.0; // Entfernung des Zielbahnhofs
+    private static final double MAX_SPEED = 20.0;   // Maximalgeschwindigkeit
+    private static final double MAX_ACCEL = 1.0;    // max. Beschleunigung pro Tick
+    private static final double MAX_BRAKE = 2.0;    // max. Bremsverzoegerung pro Tick
+
     private double entfernung;
-    private double geschwindigkeit;
+    private double geschwindigkeit;       // tatsaechliche (Ist-)Geschwindigkeit
+    private double zielGeschwindigkeit;   // vom GP-Programm gewuenschte (Soll-)Geschwindigkeit
     private double energie;
 
-    public void setGeschwindigkeit(double geschwindigkeit) {
-        this.geschwindigkeit = geschwindigkeit;
+    public void setZielGeschwindigkeit(double zielGeschwindigkeit) {
+        this.zielGeschwindigkeit = zielGeschwindigkeit;
     }
 
     public double getEnergie() {
@@ -123,11 +153,29 @@ public class Zug {
         return entfernung;
     }
 
+    public double getRestEntfernung() {
+        return ZIEL - entfernung;
+    }
+
     /**
      * Ein Zeitschritt.
      */
     public void tick() {
         // Physiker*innen bitte wegsehen...
+
+        // Sollgeschwindigkeit auf den erlaubten Bereich [0, MAX_SPEED] begrenzen
+        // (kein Rueckwaertsfahren, nicht schneller als Maximalgeschwindigkeit).
+        double soll = Math.max(0.0, Math.min(zielGeschwindigkeit, MAX_SPEED));
+
+        // Ist-Geschwindigkeit naehert sich der Soll-Geschwindigkeit an,
+        // begrenzt durch maximale Beschleunigung bzw. Bremsverzoegerung.
+        double diff = soll - geschwindigkeit;
+        if (diff > 0) {
+            geschwindigkeit += Math.min(diff, MAX_ACCEL);  // beschleunigen
+        } else {
+            geschwindigkeit -= Math.min(-diff, MAX_BRAKE); // bremsen
+        }
+
         this.entfernung += geschwindigkeit;
         this.energie += geschwindigkeit * geschwindigkeit;
     }
