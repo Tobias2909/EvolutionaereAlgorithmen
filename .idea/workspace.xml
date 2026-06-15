@@ -5,10 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="27d8f6ce-d32f-41af-b2d2-55beb593f1ce" name="Changes" comment="Add genetic algorithm and refactor optimization functions">
-      <change beforePath="$PROJECT_DIR$/java/src/CsvWriter.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/CsvWriter.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/DifferentialEvolution.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/GeneticAlgorithm.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/java/src/Main.java" beforeDir="false" afterPath="$PROJECT_DIR$/java/src/Main.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/EvolutionaereAlgorithmen.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -121,7 +119,7 @@
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "main",
     "junie.onboarding.icon.badge.shown": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/guest/IdeaProjects/EvolutionaereAlgorithmen",
@@ -143,7 +141,7 @@
       <recent name="C:\Users\guest\IdeaProjects\EvolutionaereAlgorithmen" />
     </key>
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Application.Zugfahrt">
     <configuration name="Main" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
       <option name="MAIN_CLASS_NAME" value="src.Main" />
       <module name="EvolutionaereAlgorithmen" />
@@ -151,8 +149,22 @@
         <option name="Make" enabled="true" />
       </method>
     </configuration>
+    <configuration name="Zugfahrt" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="de.hawhamburg.inf.ea.zug.Zugfahrt" />
+      <module name="EvolutionaereAlgorithmen" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="de.hawhamburg.inf.ea.zug.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <recent_temporary>
       <list>
+        <item itemvalue="Application.Zugfahrt" />
         <item itemvalue="Application.Main" />
       </list>
     </recent_temporary>
@@ -160,8 +172,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.24374.151" />
-        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.24374.151" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.27397.103" />
       </set>
     </attachedChunks>
   </component>
@@ -174,6 +186,7 @@
       <updated>1777720504653</updated>
       <workItem from="1779377467290" duration="670000" />
       <workItem from="1780149002694" duration="2517000" />
+      <workItem from="1781520461604" duration="994000" />
     </task>
     <task id="LOCAL-00001" summary="Initial commit">
       <option name="closed" value="true" />

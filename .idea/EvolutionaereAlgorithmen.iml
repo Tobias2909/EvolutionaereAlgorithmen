@@ -17,5 +17,23 @@
         <SOURCES />
       </library>
     </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jenetics.prog-9.0.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jenetics.prog-9.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library name="jenetics.ext-9.0.0">
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/lib/jenetics.ext-9.0.0.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
   </component>
 </module>
