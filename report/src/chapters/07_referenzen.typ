@@ -1,3 +1,0 @@
-#import "../dependencies.typ": *
-
-= Referenzen

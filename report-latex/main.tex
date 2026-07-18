@@ -1,0 +1,87 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% GECCO / SIGEVO submission — ACM acmart class, sigconf format.
+%% Vorgaben: https://gecco-2025.sigevo.org/Paper-Submission-Instructions
+%% Kompilieren: pdflatex main; bibtex main; pdflatex main; pdflatex main
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[sigconf]{acmart}
+
+%% ---------------------------------------------------------------------------
+%% Für den anonymen Review-Prozess (Double-Blind) diese Zeile aktivieren.
+%% Für die finale Version (Camera-Ready) auskommentieren.
+%% \settopmatter{printacmref=false}   % ACM-Referenzblock ausblenden (Kurs)
+%% ---------------------------------------------------------------------------
+
+%% Sprache: Deutsch. babel für Silbentrennung/Anführungszeichen.
+\usepackage[ngerman]{babel}
+
+%% babel benennt die Abstract-Überschrift zu "Zusammenfassung" um -> zurück auf "Abstract".
+\addto\captionsngerman{\renewcommand{\abstractname}{Abstract}}
+
+%% Kein ACM-Copyright/DOI-Block für eine Uni-Ausarbeitung.
+\setcopyright{none}
+\settopmatter{printacmref=false}   % ACM-Reference-Format-Block entfernen
+\renewcommand\footnotetextcopyrightpermission[1]{} % Fußzeilen-Copyright weg
+\pagestyle{plain}                  % Seitenzahlen, keine ACM-Kopfzeile
+
+\begin{document}
+
+\title{Wie viel Wahrnehmung braucht ein NEAT-Agent?}
+\subtitle{Einfluss von Zielrichtung und Sichtradius auf das Lösen von Labyrinthen}
+
+%% ---------------------------------------------------------------------------
+%% Autoren
+%% ---------------------------------------------------------------------------
+\author{Tobias Bandt}
+\affiliation{%
+  \institution{HAW Hamburg}
+  \city{Hamburg}
+  \country{Deutschland}
+}
+\email{mail@tobiasbandt.de}
+
+%% Kopfzeilen-Kurztitel für Autoren
+\renewcommand{\shortauthors}{Bandt}
+
+%% ---------------------------------------------------------------------------
+%% Abstract
+%% ---------------------------------------------------------------------------
+\begin{abstract}
+  Abstract-Text here
+\end{abstract}
+
+%% CCS-Concepts optional. Für den Kurs weglassen oder minimal halten.
+% \begin{CCSXML} ... \end{CCSXML}
+% \ccsdesc[500]{Computing methodologies~Genetic algorithms}
+
+\keywords{Neuroevolution, NEAT, Labyrinth, Wahrnehmungsradius, Evolutionäre Algorithmen}
+
+\maketitle
+
+%% ===========================================================================
+\section{Einführung}
+Kontext, Kurs erklären, praktikum.
+
+\section{Ausgangszustand}
+Aktueller Code: NEAT-Setup, 8-Zellen-Input, Fitness, Konfiguration.
+
+\section{Vorgehen}
+Festlegen was getestet werden soll und erwarteter Effekt notieren
+
+\section{Durchführung}
+Code-Diffs, code erklären, Metriken, Seeds/Mazes.
+
+\section{Ergebnisse}
+Nur Fakten/Messwerte, Diagramme pro Konfiguration.
+
+\section{Diskussion}
+Interpretation, Hypothesen bestätigt/verworfen, eigene Einschätzung.
+
+\section{Fazit}
+Rückblick auf das Projekt.
+
+%% ===========================================================================
+%% Literatur: ACM-Reference-Format (bibtex). Datei references.bib.
+%\bibliographystyle{ACM-Reference-Format}
+%\bibliography{references}
+
+\end{document}
