@@ -10,6 +10,10 @@ MAP_SIZE = 25
 # Maximale Schrittzahl pro Agent (Training und Visualisierung nutzen denselben Wert)
 MAX_STEPS = MAP_SIZE * MAP_SIZE//4
 
+# Duerfen bereits besuchte Felder erneut betreten werden?
+#   False: Der Agent faehrt sich in einer Sackgasse endgueltig fest.
+#   True:  Der Agent kann aus Sackgassen zurueck, kann seine Schritte aber auch mit Hin- und herlaufen verschwenden.
+ALLOW_BACKTRACK = False
 
 class MapGenerator:
     """
@@ -154,10 +158,10 @@ class Agent:
         """
         
         def valid_move(x, y):
-             # MIT Backtracking: besuchte Felder wieder betretbar -> Agent kann aus Sackgassen zurueck
-             #return self._is_free(x, y)
-             # OHNE Backtracking: besuchte Felder gesperrt (obere Zeile auskommentieren, diese aktivieren)
-             return self._is_free(x, y) and (x, y) not in self.visited
+            if not self._is_free(x, y):
+                return False
+            # Steuerung ueber ALLOW_BACKTRACK am Dateikopf.
+            return ALLOW_BACKTRACK or (x, y) not in self.visited
 
         # TODO
         # aktuelle Position
