@@ -394,6 +394,11 @@ def eval_genomes(genomes, config):
         agent.set_goal(0, 0)
         agent.run()
         genome.fitness = agent.fitness
+        # Fuer die Auswertung: hat dieser Agent das Ziel betreten? Die Fitness
+        # allein verraet das nicht eindeutig, weil ein Agent mit vielen
+        # ungueltigen Schritten trotz Zielerreichung niedrig liegen kann.
+        genome.ziel_erreicht = (agent.pos_x, agent.pos_y) == (agent.goal_x,
+                                                              agent.goal_y)
 
     return
 
