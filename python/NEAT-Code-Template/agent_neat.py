@@ -27,6 +27,12 @@ RADIUS = 1
 # zwangslaeufig dieselbe Richtung, egal wo das Ziel liegt.
 USE_GOAL_DIR = False
 
+# Seeds fuer die beiden Zufallsquellen des Versuchs. Wiederholung i der Studie
+# benutzt spaeter MAZE_SEED = i und RUN_SEED = i, sodass jede Variante auf
+# denselben zehn Labyrinthen mit denselben Startpopulationen geprueft wird.
+MAZE_SEED = 0   # bestimmt das Labyrinth
+RUN_SEED = 0    # bestimmt Startpopulation, Mutationen und Elternauswahl
+
 class MapGenerator:
     """
         MapGenerator kümmert sich um die Erzeugung und die Anzeige der
@@ -40,17 +46,24 @@ class MapGenerator:
         self.map = [[0 for _ in range(size)] for _ in range(size)]
         self.tilesize = 20
     
-    def generate(self):
+    def generate(self, seed=None):
         """
            Erzeugt eine Zufallskarte und gibt sie als 2D-Array zurück.
            Eine 0 im Array steht für ein betretbares Feld, 1 für ein
            Hindernis, S für Start und E für Ende.
+
+           Mit `seed` entsteht reproduzierbar immer dieselbe Karte. Dafuer
+           wird ein eigener Zufallsgenerator benutzt und nicht der globale:
+           sonst haenge davon, wie viele Karten schon erzeugt wurden, auch
+           saemtliche Zufallsentscheidungen von neat-python ab.
         """
-        
+
+        rng = random.Random(seed) if seed is not None else random
+
         # Sicherstellen, dass es mindestens einen Pfad vom Start bis zum Ende gibt
         while True:
             #self.map = [[random.randint(0, 1) for _ in range(self.size)] for _ in range(self.size)]
-            self.map = [[1 if random.random() < 0.25 else 0 for _ in range(self.size)] for _ in range(self.size)]
+            self.map = [[1 if rng.random() < 0.25 else 0 for _ in range(self.size)] for _ in range(self.size)]
             if self._is_valid():
                 break
 
@@ -324,6 +337,27 @@ def input_size():
     return len(probe._get_map_env())
 
 
+def make_maze(seed=None):
+    """
+        Erzeugt reproduzierbar das Labyrinth zu einem Seed und gibt den
+        fertigen MapGenerator zurueck.
+    """
+    generator = MapGenerator(MAP_SIZE, (0, 0), (MAP_SIZE - 1, MAP_SIZE - 1))
+    generator.generate(seed)
+    return generator
+
+
+def seed_run(seed):
+    """
+        Setzt den globalen Zufallsgenerator, aus dem neat-python schoepft.
+
+        Muss vor dem Anlegen der Population passieren, weil dort schon die
+        Startgenome gewuerfelt werden. Die Karte ist davon unabhaengig, die
+        bringt ihren eigenen Generator mit.
+    """
+    random.seed(seed)
+
+
 def apply_input_size(config):
     """
         Traegt die gemessene Vektorlaenge in die NEAT-Konfiguration ein.
@@ -360,9 +394,11 @@ def eval_genomes(genomes, config):
 
     return
 
-# Erzeugen einer Zufallskarte der Größe MAP_SIZE x MAP_SIZE
-generator = MapGenerator(MAP_SIZE, (0, 0), (MAP_SIZE-1, MAP_SIZE-1))
-generator.generate()
+# Erzeugen der Karte der Größe MAP_SIZE x MAP_SIZE zum eingestellten Seed
+generator = make_maze(MAZE_SEED)
+
+# Zufallsgenerator fuer die Evolution setzen, bevor die Population entsteht
+seed_run(RUN_SEED)
 
 # Laden einer geeigneten NEAT-Konfiguration aus der Datei 'neat-config'
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
