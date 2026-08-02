@@ -1,3 +1,4 @@
+import os
 import random
 from tkinter import Tk, Canvas
 import neat
@@ -375,13 +376,15 @@ def apply_input_size(config):
 def eval_genomes(genomes, config):
     """
         Testet jedes Genom mit einem Agenten.
+
+        Die Karte kommt ueber config.map herein, weil neat-python der
+        Fitness-Funktion nur (genomes, config) uebergibt. Sie bleibt fuer den
+        gesamten Lauf konstant; fuer die in Kapitel 3.3 erwaehnte Erweiterung
+        "neues Labyrinth pro Generation" muesste hier eine neue Karte erzeugt
+        und in config.map geschrieben werden.
     """
-    
-    # NEUES Labyrinth pro Generation -> Netz muss generalisieren statt auswendig lernen.
-    #generator.generate()
-    # FESTES Labyrinth: obere Zeile auskommentieren, dann bleibt das beim Start erzeugte Labyrinth.
-    map = generator.map
-    config.map = map
+
+    map = config.map
 
     for genome_id, genome in genomes:
         net = neat.nn.FeedForwardNetwork.create(genome, config)
@@ -394,44 +397,69 @@ def eval_genomes(genomes, config):
 
     return
 
-# Erzeugen der Karte der Größe MAP_SIZE x MAP_SIZE zum eingestellten Seed
-generator = make_maze(MAZE_SEED)
+def load_config():
+    """
+        Laedt neat-config und traegt die aktuelle Eingabegroesse ein.
 
-# Zufallsgenerator fuer die Evolution setzen, bevor die Population entsteht
-seed_run(RUN_SEED)
+        Der Pfad haengt an der Quelldatei und nicht am Arbeitsverzeichnis,
+        damit auch ein Skript aus einem anderen Ordner die Konfiguration
+        findet.
+    """
+    pfad = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                        'neat-config')
+    config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
+                         neat.DefaultSpeciesSet, neat.DefaultStagnation,
+                         pfad)
+    # num_inputs aus der Datei durch die tatsaechliche Vektorlaenge ersetzen,
+    # damit RADIUS allein genuegt und nichts von Hand nachgezogen werden muss.
+    apply_input_size(config)
+    return config
 
-# Laden einer geeigneten NEAT-Konfiguration aus der Datei 'neat-config'
-config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
-                     neat.DefaultSpeciesSet, neat.DefaultStagnation,
-                     'neat-config')
 
-# num_inputs aus der Datei durch die tatsaechliche Vektorlaenge ersetzen,
-# damit RADIUS allein genuegt und nichts von Hand nachgezogen werden muss.
-apply_input_size(config)
+def main(generationen=100, zeige_gui=True):
+    """
+        Ein einzelner Trainingslauf mit den Einstellungen am Dateikopf.
+    """
 
-config.map = generator.map
+    # Karte zum eingestellten Seed erzeugen
+    generator = make_maze(MAZE_SEED)
 
-# Erzeugen einer Population
-p = neat.Population(config)
+    # Zufallsgenerator fuer die Evolution setzen, bevor die Population entsteht
+    seed_run(RUN_SEED)
 
-# Ein Listener, der den Status auf der Konsole loggt
-p.add_reporter(neat.StdOutReporter(False))
+    config = load_config()
+    config.map = generator.map
 
-# Statistik-Logger für die Visualisierung des Netzes
-stats = neat.StatisticsReporter()
-p.add_reporter(stats)
+    # Erzeugen einer Population
+    p = neat.Population(config)
 
-# Run until a solution is found.
-winner = p.run(eval_genomes, 100) # up to X generations
+    # Ein Listener, der den Status auf der Konsole loggt
+    p.add_reporter(neat.StdOutReporter(False))
 
-#visualize.draw_net(config, winner, True)
-#visualize.draw_net(config, winner, True, prune_unused=True)
-#visualize.plot_stats(stats, ylog=False, view=True)
-#visualize.plot_species(stats, view=True)
+    # Statistik-Logger für die Visualisierung des Netzes
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
 
-net = neat.nn.FeedForwardNetwork.create(winner, config)
-agent = Agent(net)
-agent.set_map(config.map)
-agent.set_goal(0,0)
-agent.set_start(MAP_SIZE-1, MAP_SIZE-1)
-generator.draw_map(agent)
+    # Run until a solution is found.
+    winner = p.run(eval_genomes, generationen)
+
+    #visualize.draw_net(config, winner, True)
+    #visualize.draw_net(config, winner, True, prune_unused=True)
+    #visualize.plot_stats(stats, ylog=False, view=True)
+    #visualize.plot_species(stats, view=True)
+
+    if zeige_gui:
+        net = neat.nn.FeedForwardNetwork.create(winner, config)
+        agent = Agent(net)
+        agent.set_map(config.map)
+        agent.set_goal(0, 0)
+        agent.set_start(MAP_SIZE - 1, MAP_SIZE - 1)
+        generator.draw_map(agent)
+
+    return winner, stats
+
+
+# Nur beim direkten Start trainieren. Beim Import (etwa durch experiment.py)
+# soll die Datei ausschliesslich Klassen und Funktionen bereitstellen.
+if __name__ == "__main__":
+    main()
