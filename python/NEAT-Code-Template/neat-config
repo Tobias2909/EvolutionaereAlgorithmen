@@ -14,8 +14,9 @@ num_inputs              = 8
 num_hidden              = 2
 num_outputs             = 4
 initial_connection      = partial_direct 0.5
-# recurrent allowed
-feed_forward            = False
+# Muss zu neat.nn.FeedForwardNetwork im Code passen: waeren rekurrente Verbindungen erlaubt, wuerden sie beim Netzaufbau verworfen
+# und ein Teil der Struktur-Mutationen liefe wirkungslos ins Leere.
+feed_forward            = True
 compatibility_disjoint_coefficient    = 1.0
 compatibility_weight_coefficient      = 0.6
 conn_add_prob           = 0.5
