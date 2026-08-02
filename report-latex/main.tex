@@ -17,11 +17,40 @@
 %% babel benennt die Abstract-Überschrift zu "Zusammenfassung" um -> zurück auf "Abstract".
 \addto\captionsngerman{\renewcommand{\abstractname}{Abstract}}
 
+%% Deutsche Anführungszeichen über \enquote{...}.
+\usepackage{csquotes}
+
+%% Quelltext-Listings für die Code-Ausschnitte im Kapitel "Ausgangszustand".
+\usepackage{listings}
+\lstset{
+  language=Python,
+  basicstyle=\ttfamily\scriptsize,
+  numbers=left,
+  numberstyle=\tiny,
+  frame=single,
+  breaklines=true,
+  columns=fullflexible,
+  showstringspaces=false,
+  captionpos=b,
+  extendedchars=true,
+  literate={ä}{{\"a}}1 {ö}{{\"o}}1 {ü}{{\"u}}1
+           {Ä}{{\"A}}1 {Ö}{{\"O}}1 {Ü}{{\"U}}1 {ß}{{\ss}}1
+}
+%% Listing-Beschriftungen linksbündig statt im Blocksatz gedehnt.
+\captionsetup[lstlisting]{singlelinecheck=false, justification=raggedright}
+
 %% Kein ACM-Copyright/DOI-Block für eine Uni-Ausarbeitung.
 \setcopyright{none}
 \settopmatter{printacmref=false}   % ACM-Reference-Format-Block entfernen
 \renewcommand\footnotetextcopyrightpermission[1]{} % Fußzeilen-Copyright weg
 \pagestyle{plain}                  % Seitenzahlen, keine ACM-Kopfzeile
+
+%% Kopfzeile: statt des ACM-Platzhalters ("Conference'17 ...") die Kursangabe.
+\acmConference[EA 2026]{Evolutionäre Algorithmen}{Sommersemester 2026}{HAW Hamburg}
+
+%% Lange Bezeichner in \texttt bekommen manuell \allowbreak-Stellen
+%% (Umbruch ohne eingefügten Bindestrich, sonst wären sie missverständlich).
+\emergencystretch=1em
 
 \begin{document}
 
@@ -37,7 +66,7 @@
   \city{Hamburg}
   \country{Deutschland}
 }
-\email{mail@tobiasbandt.de}
+\email{eawp@tobiasbandt.de}
 
 %% Kopfzeilen-Kurztitel für Autoren
 \renewcommand{\shortauthors}{Bandt}
@@ -59,24 +88,134 @@
 
 %% ===========================================================================
 \section{Einführung}
-Kontext, Kurs erklären, praktikum.
+Im Sommersemester 2026 wurde an der Hochschule für Angewandte Wissenschaften in Hamburg der Wahlpflichtkurs Evolutionäre Algorithmen von Prof. Dr.-Ing. Christian Lins angeboten. Im Verlauf dieses Kurses wurden Themen wie Hill Climbing, Differential Evolution, Genetische Algorithmen und NEAT in praktischen Übungen vertieft. Zum Kurs gehört ein Praktikum aus sechs aufeinander aufbauenden Aufgabenblättern diese Ausarbeitung knüpft an das dritte an, in dem mit NEAT ein neuronales Netz evolviert wird, das einen Agenten durch ein zufällig erzeugtes Labyrinth steuert.
 
+Bei der Bearbeitung ist mir aufgefallen, dass der Agent zwar lernt, nicht gegen Wände zu laufen, das Ziel aber nur selten und eher zufällig erreicht. Der Grund liegt in den Eingaben: Die acht Umgebungsfelder sagen dem Netz, wohin es sich bewegen \emph{kann}, aber nicht, wohin es sich bewegen \emph{sollte}. Ein vorwärtsgerichtetes Netz bildet dieselbe Eingabe immer auf dieselbe Ausgabe ab, also führen zwei lokal gleich aussehende Stellen im Labyrinth zwangsläufig zur selben Bewegungsrichtung -- unabhängig davon, wo das Ziel liegt. Das Aufgabenblatt nennt die acht Felder allerdings nur als Untergrenze und stellt ausdrücklich frei, dem Agenten \enquote{vielleicht etwas mehr} zu zeigen.
+
+Daraus ergibt sich die Fragestellung: Wie viel Wahrnehmung -- in Form von Zielrichtung und Sichtradius -- braucht der Agent, um ein Labyrinth zuverlässig zu lösen, und ab wann schadet mehr Eingabe mehr, als sie nützt? Der zweite Teil ist dabei genauso wichtig wie der erste, denn jede zusätzliche Eingabe vergrößert das Netz und damit den Suchraum, den NEAT durchsuchen muss. Meine Vermutung ist deshalb ein \enquote{Sweet Spot}. Mehr Wahrnehmung hilft bis zu einem Punkt und wird danach zum Nachteil. Ergänzend werden einige NEAT-Parameter variiert. Kapitel~\ref{sec:ausgangszustand} beschreibt die Aufgabe und den Stand des Codes, Kapitel~\ref{sec:vorgehen} die Varianten und die vorab festgelegten Hypothesen, die Kapitel~\ref{sec:durchfuehrung} bis \ref{sec:fazit} Umsetzung, Messwerte und Bewertung.
+
+%% ===========================================================================
 \section{Ausgangszustand}
-Aktueller Code: NEAT-Setup, 8-Zellen-Input, Fitness, Konfiguration.
+\label{sec:ausgangszustand}
 
+\subsection{Aufgabenstellung und Umsetzung}
+Das Aufgabenblatt verlangt, mit \texttt{neat-python} Individuen mit mindestens acht Eingängen (die acht Umgebungsfelder) und vier Ausgängen (die vier Richtungen) zu evolvieren, eine Fitness-Funktion zu schreiben, die den Agenten schrittweise durch eine zufällig erzeugte Karte steuert, und Pfad sowie bestes Netz zu visualisieren. Der Agent hat ein festes Schrittbudget und bekommt die beste Bewertung, wenn er das Ziel erreicht andernfalls muss die Fitness sinnvoll skaliert werden, etwa über den Abstand zum Ziel oder die Anzahl erfolgreicher Schritte. Kartengröße, Start- und Zielpunkt sind frei wählbar, und das Blatt fordert explizit zum Experimentieren mit Zielfunktionen und Kartenparametern auf.
+
+Meine Umsetzung baut auf der mitgelieferten Vorlage \texttt{agent-\allowbreak neat-\allowbreak vorlage.py} auf. Die Klasse \texttt{MapGenerator} erzeugt eine 25$\times$25-Karte, in der jedes Feld mit 25\,\% Wahrscheinlichkeit eine Wand ist. Der Agent startet unten rechts und soll das Ziel oben links erreichen, gezeichnet wird über ein Tkinter-Canvas. Zwei Ungenauigkeiten der Vorlage seien erwähnt, weil sie beim Lesen des Codes irritieren: Die Marker \texttt{'S'} und \texttt{'E'} sind gegenüber der Agentensicht vertauscht, und die Richtungsnamen in \texttt{move()} passen nicht zur Zeichenrichtung des Canvas. Beides ist rein kosmetisch, da das Netz seine Ausgänge nur über deren Wirkung lernt.
+
+\texttt{move()} prüft, ob das Zielfeld innerhalb der Karte und keine Wand ist. Ungültige Schritte lassen den Agenten stehen, verbrauchen aber trotzdem einen Schritt. Zusätzlich habe ich einen Schalter für Backtracking eingebaut. Aktiv ist die Variante ohne: Besuchte Felder gelten als gesperrt, damit ein Netz nicht einfach zwischen zwei Feldern pendelt. Im Gegenzug ist eine Sackgasse endgültig, denn ab dort ist jeder weitere Schritt ungültig.
+
+\subsection{Wahrnehmung und Fitness}
+Die Wahrnehmung steckt vollständig in \texttt{\_get\_\allowbreak map\_env()} (Listing~\ref{lst:env}). Die Methode liest die acht Nachbarfelder aus, wertet Felder außerhalb der Karte als Wand und gibt einen Vektor der Länge acht zurück, passend zu \texttt{num\_inputs = 8}.
+
+\begin{lstlisting}[caption={Wahrnehmung im Ausgangszustand: acht Nachbarfelder, keine Zielinformation.},label={lst:env}]
+def _get_map_env(self):
+    env = []
+    def get_value(x, y):
+        if x < 0 or y < 0 or x >= len(self.map) \
+                or y >= len(self.map[0]):
+            return 1  # ausserhalb der Karte = Wand
+        elif self.map[x][y] in ('E', 'S'):
+            return 0
+        return self.map[x][y]
+    # alle acht Nachbarfelder, hier verkuerzt
+    for dx, dy in [(-1,1),(0,1),(1,1),(-1,0),
+                   (1,0),(-1,-1),(0,-1),(1,-1)]:
+        env.append(get_value(self.pos_x+dx, self.pos_y+dy))
+    return env
+\end{lstlisting}
+
+Diese Methode ist die zentrale Stellschraube dieser Arbeit: Sowohl ein größerer Sichtradius als auch eine Zielrichtung lassen sich hier einbauen, ohne den Rest des Programms zu ändern -- lediglich \texttt{num\_inputs} muss zur neuen Vektorlänge passen. Genauso wichtig ist, was nicht darin steht: keine Position, kein Abstand, keine Richtung zum Ziel.
+
+Die Methode \texttt{run()} führt pro Agent bis zu \texttt{MAX\_STEPS} $=$ 156 Schritte aus (bei 100 Schritten bliebe kaum Spielraum, da der kürzeste Weg schon 48 Schritte lang ist) und berechnet dabei die Fitness:
+\begin{equation}
+  \begin{split}
+    F ={} & (d_{\text{start}} - d_{\text{best}}) + 10 \cdot [\,\text{Ziel erreicht}\,] \\
+          & + \sum_{t} \big(0{,}1 \cdot [\,\text{Schritt gültig}\,] - 0{,}1\big)
+  \end{split}
+\end{equation}
+
+Der erste Term belohnt nicht den Abstand am Ende, sondern die größte je erreichte Annäherung, sodass ein Agent seinen Fortschritt nicht verliert, wenn er später in eine Sackgasse läuft. Der Bonus von 10 hebt erfolgreiche Agenten deutlich ab, und die Schrittbilanz bestraft effektiv nur ungültige Schritte. Bei einem Startabstand von $\sqrt{24^2+24^2} \approx 33{,}94$ liegt die maximal erreichbare Fitness bei rund 43,94, die konfigurierte \texttt{fitness\_threshold} von 40,0 ist also ein brauchbares Abbruchkriterium für \enquote{gelöst}.
+
+\subsection{NEAT-Konfiguration und Schwachstellen}
+\texttt{eval\_genomes()} baut aus jedem Genom ein Netz, lässt einen frischen Agenten laufen und schreibt dessen Fitness zurück. Alle Genome werden auf derselben Karte bewertet, da der Aufruf zum Neuerzeugen pro Generation auskommentiert ist. Das macht die Läufe vergleichbar, erlaubt einem Netz aber prinzipiell, die Karte auswendig zu lernen. Tabelle~\ref{tab:config} zeigt die wichtigsten Parameter aus \texttt{neat-config}. Gerechnet wird mit 1000 Individuen über maximal 100 Generationen, mit vorzeitigem Abbruch beim Überschreiten der Fitness-Schwelle.
+
+\begin{table}[t]
+  \caption{Wichtigste Parameter aus \texttt{neat-config} im Ausgangszustand.}
+  \label{tab:config}
+  \small
+  \begin{tabular}{@{}l@{\hspace{3pt}}l@{\hspace{8pt}}l@{\hspace{3pt}}l@{}}
+    \toprule
+    \texttt{pop\_size} & 1000 & \texttt{num\_inputs} / \texttt{num\_outputs} & 8 / 4 \\
+    \texttt{fitness\_threshold} & 40,0 & \texttt{num\_hidden} & 2 \\
+    \texttt{feed\_forward} & False & \texttt{activation} & relu \\
+    \texttt{conn\_add\_prob} & 0,5 & \texttt{conn\_delete\_prob} & 0,2 \\
+    \texttt{node\_add\_prob} & 0,3 & \texttt{node\_delete\_prob} & 0,1 \\
+    \texttt{compatibility\_} & 2,8 & \texttt{weight\_mutate\_rate} & 0,8 \\
+    \texttt{threshold} & & \texttt{elitism} & 2 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Damit ergeben sich vier Schwachstellen. Erstens fehlt jede Zielinformation, sodass lokal identische Situationen zwangsläufig zur selben Entscheidung führen. Zweitens erkennt der Agent bei einem Sichtradius von einem Feld eine Sackgasse erst, wenn er schon darin steht. Drittens verfällt ohne Backtracking nach dem Festfahren das restliche Schrittbudget. Viertens steht \texttt{feed\_forward} auf \texttt{False}, erlaubt also rekurrente Verbindungen, während der Code die Netze mit \texttt{FeedForward\allowbreak Network.create()} aufbaut -- solche Verbindungen gehen beim Netzaufbau verloren, ein Teil der Mutationen läuft also ins Leere. Die ersten beiden Punkte sind die Stellschrauben dieser Arbeit. Der dritte wird für alle Varianten gleich gehalten, der vierte dagegen ist schlicht ein Fehler in der Konfiguration und wird vor der ersten Messung behoben (Kapitel~\ref{sec:vorgehen}).
+
+%% ===========================================================================
 \section{Vorgehen}
-Festlegen was getestet werden soll und erwarteter Effekt notieren
+\label{sec:vorgehen}
+
+\subsection{Varianten}
+Das Vorgehen folgt einem klassischen Versuchsaufbau: eine Referenz und darauf aufbauend Varianten, bei denen jeweils genau eine Stellschraube verändert wird. Die Hypothesen habe ich bewusst vor der ersten Messung notiert, weil sich Messergebnisse im Nachhinein fast immer irgendwie erklären lassen. Zwei Dinge werden vorab geklärt, die selbst nicht untersucht werden. Zum einen wird die in Kapitel~\ref{sec:ausgangszustand} beschriebene Unstimmigkeit korrigiert und \texttt{feed\_forward} auf \texttt{True} gesetzt, passend zum verwendeten Netztyp -- ohne diese Korrektur wären besonders die Aussagen zu den Mutationsraten nicht interpretierbar. Zum anderen bleibt Backtracking für alle Varianten ausgeschaltet, wird also konstant gehalten statt korrigiert. Beides gilt auch für die Referenz V0, damit die Vergleichbarkeit erhalten bleibt.
+
+Der Sichtradius $r$ bezeichnet die Anzahl der Felder, die der Agent in jede Richtung sieht, was $(2r+1)^2-1$ Umgebungsfeldern entspricht: 8 Felder bei $r=1$, 24 bei $r=2$ und 48 bei $r=3$. Die Zielrichtung kommt als zwei auf $[-1,1]$ normierte Eingaben $\Delta x$ und $\Delta y$ hinzu, jeweils die Differenz der Koordinaten geteilt durch $\texttt{MAP\_SIZE}-1$. Die Normierung sorgt dafür, dass die Zielrichtung dieselbe Größenordnung hat wie die Wandeingaben und nicht allein durch ihren Zahlenwert dominiert. Tabelle~\ref{tab:varianten} zeigt die Varianten. V2 ist die Kontrolle zu V1: Sie vergrößert die Eingabe, ohne die Zielrichtung zu verraten, und zeigt damit, ob die \emph{Art} oder nur die \emph{Menge} der Information hilft.
+
+\begin{table}[t]
+  \caption{Untersuchte Varianten. \mbox{\texttt{num\_inputs}} muss zur Länge des Eingabevektors passen.}
+  \label{tab:varianten}
+  \small
+  \begin{tabular}{@{}ll@{\hspace{5pt}}c@{\hspace{5pt}}c@{\hspace{5pt}}r@{}}
+    \toprule
+    Variante & Beschreibung & $r$ & Ziel & \texttt{num\_inputs} \\
+    \midrule
+    V0 & Referenz (Ausgangszustand) & 1 & nein & 8 \\
+    V1 & nur Zielrichtung           & 1 & ja   & 10 \\
+    V2 & Radius 2 ohne Ziel         & 2 & nein & 24 \\
+    V3 & Radius 2 mit Ziel          & 2 & ja   & 26 \\
+    V4 & Radius 3 mit Ziel          & 3 & ja   & 50 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\subsection{Hypothesen}
+\textbf{H1: Die Zielrichtung ist der entscheidende Faktor.} V1 löst das Labyrinth deutlich zuverlässiger als V0 und braucht weniger Generationen, weil das Netz erst mit $\Delta x$ und $\Delta y$ zwischen lokal gleich aussehenden Situationen unterscheiden und eine Strategie der Form \enquote{gehe Richtung Ziel, weiche an Wänden aus} überhaupt abbilden kann.
+
+\textbf{H2: Mehr Eingaben allein bringen wenig.} V2 verbessert die Erfolgsquote gegenüber V0 nur geringfügig und bleibt hinter V1 zurück, obwohl V2 mehr Werte bekommt. Ein größerer Radius liefert mehr Details zur Wandstruktur, aber weiterhin keinen Hinweis auf die Zielrichtung.
+
+\textbf{H3: Der Nutzen zusätzlicher Wahrnehmung ist nicht monoton.} V3 ist besser als V1, V4 dagegen wieder schlechter als V3. Radius 2 hilft, Sackgassen zu erkennen, bevor der Agent hineinläuft -- ein direkter Vorteil, weil sie ohne Backtracking endgültig sind. Bei Radius 3 wächst der Eingabevektor auf 50 Werte, NEAT muss aus deutlich mehr möglichen Verbindungen die wenigen relevanten herausfiltern, und innerhalb desselben Generationenbudgets erwarte ich ein schlechteres Ergebnis. Das Maximum vermute ich bei $r=2$.
+
+\textbf{H4: Die NEAT-Parameter wirken schwächer als die Wahrnehmung.} Populationsgröße, \texttt{compatibility\_\allowbreak threshold} sowie \texttt{conn\_add\_prob} und \texttt{node\_add\_prob} verschieben die Ergebnisse messbar, aber in kleinerem Umfang als der Wechsel von V0 auf V1, weil Parameter nur steuern, wie schnell und breit gesucht wird, und keine Strategie ermöglichen können, die sich mit den vorhandenen Eingaben nicht darstellen lässt.
+
+\subsection{Messgrößen und Versuchsaufbau}
+Die Parameterstudie zu H4 läuft nicht auf allen Varianten, sondern nur auf der besten Wahrnehmungsvariante, und variiert jeweils einen Parameter um seinen Ausgangswert herum (\texttt{pop\_size} 250/500/1000, \texttt{compatibility\_}\allowbreak\texttt{threshold} 2,0/2,8/3,5, \texttt{conn\_add\_prob} 0,3/0,5/0,7, \texttt{node\_add\_prob} 0,1/0,3/0,5). Eine vollständige Kombination aller Varianten mit allen Werten wäre bei 1000 Individuen und bis zu 100 Generationen zeitlich nicht sinnvoll durchführbar.
+
+Erfasst werden pro Lauf die \emph{Erfolgsquote} (Anteil der Wiederholungen, in denen das Ziel innerhalb von 100 Generationen erreicht wurde), die \emph{Generationen bis zur Lösung}, die \emph{beste Fitness} -- als einzige Kennzahl auch für erfolglose Läufe aussagekräftig -- und die \emph{Schritte bis zum Ziel} des besten Agenten als Maß dafür, ob eine Lösung effizient oder eher zufällig zustande kam.
+
+Jede Variante wird mit $N=10$ Wiederholungen gerechnet, da NEAT durch Startpopulation, Mutation und Elternauswahl stochastisch ist und ein einzelner Lauf nichts belegt. Alle Varianten verwenden dieselbe Folge protokollierter Seeds und dieselbe feste Karte, sodass keine Variante von einem leichteren Labyrinth profitiert und sich alle Läufe reproduzieren lassen. Dieser Aufbau prüft allerdings keine Verallgemeinerung: Ein Netz darf die Karte auswendig lernen. Lösen mehrere Varianten die feste Karte zuverlässig und lassen sich dadurch nicht mehr unterscheiden, wird als Erweiterung ein Durchgang mit pro Generation neu erzeugtem Labyrinth gerechnet. Ausgewertet wird je Variante über Mittelwert und Streuung der Messgrößen sowie über den Fitness-Verlauf pro Generation.
+
 
 \section{Durchführung}
+\label{sec:durchfuehrung}
 Code-Diffs, code erklären, Metriken, Seeds/Mazes.
 
 \section{Ergebnisse}
+\label{sec:ergebnisse}
 Nur Fakten/Messwerte, Diagramme pro Konfiguration.
 
 \section{Diskussion}
+\label{sec:diskussion}
 Interpretation, Hypothesen bestätigt/verworfen, eigene Einschätzung.
 
 \section{Fazit}
+\label{sec:fazit}
 Rückblick auf das Projekt.
 
 %% ===========================================================================
