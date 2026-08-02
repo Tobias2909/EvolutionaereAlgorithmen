@@ -10,6 +10,8 @@ reset_on_extinction   = True
 no_fitness_termination = False
 
 [DefaultGenome]
+# Wird beim Start von apply_input_size() ueberschrieben: massgeblich ist die
+# tatsaechliche Laenge des Eingabevektors, die sich aus RADIUS ergibt.
 num_inputs              = 8
 num_hidden              = 2
 num_outputs             = 4

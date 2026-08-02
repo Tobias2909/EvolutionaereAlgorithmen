@@ -286,6 +286,35 @@ class Agent:
         return
 
 
+def input_size():
+    """
+        Laenge des Eingabevektors, den das neuronale Netz erwartet.
+
+        Der Wert wird bewusst nicht aus RADIUS nachgerechnet, sondern an einem Probe-Agenten gemessen.
+        Damit kann die NEAT-Konfiguration nicht von dem abweichen, was _get_map_env() tatsaechlich liefert
+        auch dann nicht, wenn die Wahrnehmung spaeter um weitere Eingaben waechst.
+    """
+    kantenlaenge = 2 * RADIUS + 1
+    probe = Agent(net=None)
+    probe.set_map([[0] * kantenlaenge for _ in range(kantenlaenge)])
+    probe.set_goal(0, 0)
+    probe.pos_x = probe.pos_y = RADIUS
+    return len(probe._get_map_env())
+
+
+def apply_input_size(config):
+    """
+        Traegt die gemessene Vektorlaenge in die NEAT-Konfiguration ein.
+
+        num_inputs allein genuegt nicht: neat-python leitet input_keys einmalig
+        im Konstruktor daraus ab, sodass eine nachtraegliche Aenderung sonst wirkungsloss bliebe.
+    """
+    n = input_size()
+    config.genome_config.num_inputs = n
+    config.genome_config.input_keys = [-i - 1 for i in range(n)]
+    return config
+
+
 # Creates agents with the given net and tests it on the given map
 def eval_genomes(genomes, config):
     """
@@ -317,6 +346,11 @@ generator.generate()
 config = neat.Config(neat.DefaultGenome, neat.DefaultReproduction,
                      neat.DefaultSpeciesSet, neat.DefaultStagnation,
                      'neat-config')
+
+# num_inputs aus der Datei durch die tatsaechliche Vektorlaenge ersetzen,
+# damit RADIUS allein genuegt und nichts von Hand nachgezogen werden muss.
+apply_input_size(config)
+
 config.map = generator.map
 
 # Erzeugen einer Population
