@@ -18,8 +18,14 @@ ALLOW_BACKTRACK = False
 # Sichtradius des Agenten: wie viele Felder er in jede Richtung wahrnimmt.
 # Der Eingabevektor enthaelt dadurch (2*RADIUS+1)^2 - 1 Felder, also 8 bei
 # Radius 1, 24 bei Radius 2 und 48 bei Radius 3.
-# ACHTUNG: num_inputs in der Datei neat-config muss dazu passen.
+# num_inputs in neat-config wird beim Start automatisch angepasst.
 RADIUS = 1
+
+# Bekommt das Netz zusaetzlich die Richtung zum Ziel als zwei Eingaben?
+# Ohne sie sind zwei Stellen im Labyrinth, deren Umgebung gleich aussieht,
+# fuer ein vorwaertsgerichtetes Netz ununterscheidbar - es waehlt dort
+# zwangslaeufig dieselbe Richtung, egal wo das Ziel liegt.
+USE_GOAL_DIR = False
 
 class MapGenerator:
     """
@@ -217,16 +223,30 @@ class Agent:
             return False
         return self.map[x][y] in (0, 'S', 'E')
 
+    def _get_goal_dir(self):
+        """
+            Richtung zum Ziel als zwei auf [-1, 1] normierte Eingaben.
+
+            Die Normierung ueber die Kantenlaenge der Karte sorgt dafuer, dass
+            diese Werte in derselben Groessenordnung liegen wie die Wandfelder
+            (0 oder 1) und sie nicht allein durch ihren Betrag ueberdecken.
+        """
+        spanne = len(self.map) - 1
+        return [(self.goal_x - self.pos_x) / spanne,
+                (self.goal_y - self.pos_y) / spanne]
+
     def _get_map_env(self):
         """
             Liefert den Eingabevektor fuer das neuronale Netz: pro Feld im
-            Umkreis von RADIUS eine 0 (begehbar) oder eine 1 (Wand).
+            Umkreis von RADIUS eine 0 (begehbar) oder eine 1 (Wand), bei
+            USE_GOAL_DIR zusaetzlich zwei Werte fuer die Richtung zum Ziel.
 
-            Reihenfolge: zeilenweise von oben nach unten, innerhalb einer Zeile
-            von links nach rechts, das eigene Feld ausgelassen. Bei RADIUS = 1
-            ergibt das exakt die acht Nachbarfelder in der Reihenfolge der
-            urspruenglichen Vorlage (oben links, oben mitte, oben rechts,
-            mitte links, mitte rechts, unten links, unten mitte, unten rechts).
+            Reihenfolge der Felder: zeilenweise von oben nach unten, innerhalb
+            einer Zeile von links nach rechts, das eigene Feld ausgelassen. Bei
+            RADIUS = 1 ergibt das exakt die acht Nachbarfelder in der
+            Reihenfolge der urspruenglichen Vorlage (oben links, oben mitte,
+            oben rechts, mitte links, mitte rechts, unten links, unten mitte,
+            unten rechts). Die Zielrichtung haengt immer hinten an.
         """
         env = []
         # map[x][y]: x = horizontal (links=-1, rechts=+1), y = vertikal (unten=-1, oben=+1)
@@ -236,6 +256,8 @@ class Agent:
                     continue  # das eigene Feld ist keine Eingabe
                 free = self._is_free(self.pos_x + dx, self.pos_y + dy)
                 env.append(0 if free else 1)
+        if USE_GOAL_DIR:
+            env.extend(self._get_goal_dir())
         return env
 
 
