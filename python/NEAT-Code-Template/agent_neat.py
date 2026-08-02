@@ -155,10 +155,10 @@ class Agent:
         
         def valid_move(x, y):
              # MIT Backtracking: besuchte Felder wieder betretbar -> Agent kann aus Sackgassen zurueck
-             #return x >= 0 and x < len(self.map) and y >= 0 and y < len(self.map[0]) and self.map[x][y] != 1 and self.map[x][y] == 0
+             #return self._is_free(x, y)
              # OHNE Backtracking: besuchte Felder gesperrt (obere Zeile auskommentieren, diese aktivieren)
-             return x >= 0 and x < len(self.map) and y >= 0 and y < len(self.map[0]) and self.map[x][y] != 1 and (x,y) not in self.visited and self.map[x][y] == 0
-        
+             return self._is_free(x, y) and (x, y) not in self.visited
+
         # TODO
         # aktuelle Position
         x = self.pos_x
@@ -193,15 +193,25 @@ class Agent:
     def _get_distance(self):
         return math.sqrt((self.goal_x - self.pos_x)**2 + (self.goal_y - self.pos_y)**2)
 
+    def _is_free(self, x, y):
+        """
+            Einzige Quelle dafuer, ob ein Feld begehbar ist. Wahrnehmung und
+            Bewegung muessen dieselbe Antwort bekommen, sonst sieht der Agent
+            ein freies Feld, kann es aber nicht betreten.
+
+            Start- und Zielfeld tragen die Marker 'S' und 'E' statt einer 0
+            und sind trotzdem begehbar. Felder ausserhalb der Karte gelten
+            wie Waende als blockiert.
+        """
+        if x < 0 or y < 0 or x >= len(self.map) or y >= len(self.map[0]):
+            return False
+        return self.map[x][y] in (0, 'S', 'E')
+
     def _get_map_env(self):
         env = []
         def get_value(x, y):
-            if x < 0 or y < 0 or x >= len(self.map) or y >= len(self.map[0]):
-                return 1 # value for out-of-bounds indices
-            elif self.map[x][y] == 'E' or self.map[x][y] == 'S':
-                return 0
-            else:
-                return self.map[x][y]
+            # 0 = begehbar, 1 = Wand. Ausserhalb der Karte zaehlt als Wand.
+            return 0 if self._is_free(x, y) else 1
         # map[x][y]: x = horizontal (links=-1, rechts=+1), y = vertikal (unten=-1, oben=+1)
         env.append(get_value(self.pos_x - 1, self.pos_y + 1)) # oben links
         env.append(get_value(self.pos_x, self.pos_y + 1)) # oben mitte
