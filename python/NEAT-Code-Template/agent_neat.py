@@ -15,6 +15,12 @@ MAX_STEPS = MAP_SIZE * MAP_SIZE//4
 #   True:  Der Agent kann aus Sackgassen zurueck, kann seine Schritte aber auch mit Hin- und herlaufen verschwenden.
 ALLOW_BACKTRACK = False
 
+# Sichtradius des Agenten: wie viele Felder er in jede Richtung wahrnimmt.
+# Der Eingabevektor enthaelt dadurch (2*RADIUS+1)^2 - 1 Felder, also 8 bei
+# Radius 1, 24 bei Radius 2 und 48 bei Radius 3.
+# ACHTUNG: num_inputs in der Datei neat-config muss dazu passen.
+RADIUS = 1
+
 class MapGenerator:
     """
         MapGenerator kümmert sich um die Erzeugung und die Anzeige der
@@ -212,19 +218,24 @@ class Agent:
         return self.map[x][y] in (0, 'S', 'E')
 
     def _get_map_env(self):
+        """
+            Liefert den Eingabevektor fuer das neuronale Netz: pro Feld im
+            Umkreis von RADIUS eine 0 (begehbar) oder eine 1 (Wand).
+
+            Reihenfolge: zeilenweise von oben nach unten, innerhalb einer Zeile
+            von links nach rechts, das eigene Feld ausgelassen. Bei RADIUS = 1
+            ergibt das exakt die acht Nachbarfelder in der Reihenfolge der
+            urspruenglichen Vorlage (oben links, oben mitte, oben rechts,
+            mitte links, mitte rechts, unten links, unten mitte, unten rechts).
+        """
         env = []
-        def get_value(x, y):
-            # 0 = begehbar, 1 = Wand. Ausserhalb der Karte zaehlt als Wand.
-            return 0 if self._is_free(x, y) else 1
         # map[x][y]: x = horizontal (links=-1, rechts=+1), y = vertikal (unten=-1, oben=+1)
-        env.append(get_value(self.pos_x - 1, self.pos_y + 1)) # oben links
-        env.append(get_value(self.pos_x, self.pos_y + 1)) # oben mitte
-        env.append(get_value(self.pos_x + 1, self.pos_y + 1)) # oben rechts
-        env.append(get_value(self.pos_x - 1, self.pos_y)) # mitte links
-        env.append(get_value(self.pos_x + 1, self.pos_y)) # mitte rechts
-        env.append(get_value(self.pos_x - 1, self.pos_y - 1)) # unten links
-        env.append(get_value(self.pos_x, self.pos_y - 1)) # unten mitte
-        env.append(get_value(self.pos_x + 1, self.pos_y - 1)) # unten rechts
+        for dy in range(RADIUS, -RADIUS - 1, -1):
+            for dx in range(-RADIUS, RADIUS + 1):
+                if dx == 0 and dy == 0:
+                    continue  # das eigene Feld ist keine Eingabe
+                free = self._is_free(self.pos_x + dx, self.pos_y + dy)
+                env.append(0 if free else 1)
         return env
 
 
