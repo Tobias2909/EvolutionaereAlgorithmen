@@ -30,10 +30,19 @@ import experiment
 
 # Auf welcher Variante wird gerechnet? None = automatisch die beste aus
 # runs.csv, sonst z.B. "V3".
-SWEEP_VARIANTE = None
+#
+# Fest auf V1 gesetzt: V1 und V3 sind in der Hauptmessung nicht unterscheidbar
+# (beide 8 von 10 geloest), die automatische Wahl wuerde bei diesem Gleichstand
+# aber V3 nehmen - und V3 rechnet mit Radius 2 rund 40 % laenger pro Lauf,
+# ohne einen messbaren Vorteil zu bieten.
+SWEEP_VARIANTE = "V1"
 
-# Wiederholungen je Parameterwert. Auf 5 senken halbiert die Rechenzeit,
-# macht die Erfolgsquoten aber grober.
+# Wiederholungen je Parameterwert.
+#
+# MUSS zur Kartenzahl der Hauptmessung in runs.csv passen. Der Vergleichspunkt
+# jedes Parameters wird nicht neu gerechnet, sondern von der Auswertung aus
+# runs.csv geholt; bei abweichender Zahl verglichen man verschiedene
+# Kartenmengen und die Paarung waere hinfaellig.
 REPETITIONS = 10
 
 GENERATIONEN = 100
