@@ -11,6 +11,11 @@ MAP_SIZE = 25
 # Maximale Schrittzahl pro Agent (Training und Visualisierung nutzen denselben Wert)
 MAX_STEPS = MAP_SIZE * MAP_SIZE//4
 
+# Wahrscheinlichkeit, dass ein Feld beim Erzeugen der Karte zur Wand wird.
+# Steuert die Schwierigkeit: bei 0.25 existiert auf den meisten Karten noch ein
+# nahezu direkter Treppenweg zum Ziel, hoehere Werte erzwingen Umwege.
+WALL_PROBABILITY = 0.25
+
 # Duerfen bereits besuchte Felder erneut betreten werden?
 #   False: Der Agent faehrt sich in einer Sackgasse endgueltig fest.
 #   True:  Der Agent kann aus Sackgassen zurueck, kann seine Schritte aber auch mit Hin- und herlaufen verschwenden.
@@ -64,7 +69,7 @@ class MapGenerator:
         # Sicherstellen, dass es mindestens einen Pfad vom Start bis zum Ende gibt
         while True:
             #self.map = [[random.randint(0, 1) for _ in range(self.size)] for _ in range(self.size)]
-            self.map = [[1 if rng.random() < 0.25 else 0 for _ in range(self.size)] for _ in range(self.size)]
+            self.map = [[1 if rng.random() < WALL_PROBABILITY else 0 for _ in range(self.size)] for _ in range(self.size)]
             if self._is_valid():
                 break
 
