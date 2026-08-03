@@ -28,10 +28,12 @@ import experiment
 # Farbfehlsichtigkeit geprueft (schlechtestes benachbartes Paar dE 9.1).
 FARBEN = ["#2a78d6", "#eb6834", "#1baf7a", "#eda100", "#e87ba4"]
 
-# Zweite Unterscheidung neben der Farbe, damit die Abbildungen auch
-# schwarzweiss gedruckt lesbar bleiben.
+# Strichmuster als zweite Unterscheidung neben der Farbe. Nicht wegen
+# Schwarzweissdruck - die Ausarbeitung wird farbig gelesen -, sondern weil sich
+# die Kurven ueber weite Strecken ueberdecken und die obenliegende sonst die
+# darunter komplett verbirgt. Punktmarker gab es zusaetzlich, sie sind
+# entfernt: bei fuenf farbigen Kurven trennt die Farbe bereits eindeutig.
 LINIEN = ["-", "--", "-.", ":", (0, (3, 1, 1, 1))]
-MARKER = ["o", "s", "^", "D", "v"]
 
 INK = "#0b0b0b"          # Primaertext
 MUTED = "#898781"        # Achsenbeschriftung
@@ -109,10 +111,13 @@ def lade():
 
     gen = lesen(pfad_gen) if os.path.exists(pfad_gen) else []
 
-    pfad_sweep = os.path.join(experiment.ERGEBNIS_DIR, "sweep_runs.csv")
-    sweep = lesen(pfad_sweep) if os.path.exists(pfad_sweep) else []
+    def optional(name):
+        pfad = os.path.join(experiment.ERGEBNIS_DIR, name)
+        return lesen(pfad) if os.path.exists(pfad) else []
 
-    return lesen(pfad_runs), gen, sweep
+    return (lesen(pfad_runs), gen, optional("sweep_runs.csv"),
+            optional("ablation_runs.csv"),
+            optional("replikation_karten10-19.csv"))
 
 
 def vorhandene_varianten(runs):
@@ -197,9 +202,7 @@ def abbildung_fitnessverlauf(gen, varianten):
 
         nummer = stilnummer(variante)
         ax.plot(x, y, color=farbe(variante), linewidth=1.6,
-                linestyle=LINIEN[nummer % len(LINIEN)],
-                marker=MARKER[nummer % len(MARKER)], markersize=3.5,
-                markevery=max(1, len(x) // 8), label=variante)
+                linestyle=LINIEN[nummer % len(LINIEN)], label=variante)
 
     ax.set_xlabel("Generation")
     ax.set_ylabel("beste Fitness bisher")
@@ -314,54 +317,312 @@ def abbildung_sweep(runs, sweep):
 
 
 # ---------------------------------------------------------------------------
+# Loesungsmatrizen
+# ---------------------------------------------------------------------------
+# Die Matrizen zeigen dieselben Daten wie die Balken- und Punktdiagramme, aber
+# ohne zu mitteln: eine Zelle je Lauf. Erst dadurch wird sichtbar, dass die
+# Zeilen (Konfigurationen) sich kaum unterscheiden, waehrend die Spalten
+# (Karten) fast alles erklaeren - das Mitteln verschenkt genau diese Information.
+
+LUECKE = 0.16          # Anteil der Zelle, der als Abstand frei bleibt
+ZELLE = 0.155          # Kantenlaenge einer Zelle in Zoll
+
+# Die Matrizen zeigen einen Ja-Nein-Zustand, keine Zugehoerigkeit. Deshalb
+# tragen alle Zellen dieselbe neutrale Farbe und das Ergebnis steckt allein in
+# gefuellt gegen leer.
+ZELLFARBE = "#3d3b36"
+
+LEGENDE = "gefüllt = Ziel erreicht, leer = nicht erreicht"
+
+
+def _matrix(bloecke, karten, legende=LEGENDE, fussnote=None, zusatzzeilen=0):
+    """
+        Zeichnet alle Bloecke in EINE Achse, damit die Zellen ueberall gleich
+        gross und quadratisch sind.
+
+        `bloecke` ist eine Liste aus (Gruppentitel oder None, zeilen), wobei
+        eine Zeile (Beschriftung, Farbe, {Karte: geloest}) ist. Fehlt eine
+        Karte im Woerterbuch, wurde sie nicht gemessen und bleibt leer.
+    """
+    from matplotlib.patches import Rectangle
+
+    # Zeilenraster aufbauen: Gruppentitel belegen eine eigene Zeile.
+    raster = []
+    for titel, zeilen in bloecke:
+        if titel:
+            raster.append(("titel", titel, None, None))
+        for name, farb, werte in zeilen:
+            raster.append(("daten", name, farb, werte))
+
+    hoehe = len(raster) + (1 if fussnote else 0) + zusatzzeilen
+    # Die Breite muss die Zeilenbeschriftungen mittragen, die Hoehe folgt aus
+    # der Zellengroesse. Der Anker oben verhindert, dass die durch
+    # aspect="equal" gestauchte Achse in der Figur zentriert wird und darunter
+    # eine grosse Luecke stehen bleibt.
+    fig, ax = plt.subplots(figsize=(len(karten) * ZELLE + 1.6,
+                                    hoehe * ZELLE + 0.55))
+    ax.set_anchor("N")
+
+    beschriftungen = []
+    for y, (art, name, farb, werte) in enumerate(raster):
+        if art == "titel":
+            # Linksbuendig am Rasterrand, damit lange Gruppentitel die Spalte
+            # der Zeilenbeschriftungen nicht aufblaehen.
+            ax.text(0.0, y + 0.55, name, ha="left", va="center",
+                    fontsize=7.5, color=INK, fontweight="bold")
+            beschriftungen.append("")
+            continue
+        beschriftungen.append(name)
+        for x, karte in enumerate(karten):
+            if karte not in werte:
+                continue
+            ax.add_patch(Rectangle(
+                (x + LUECKE / 2, y + LUECKE / 2), 1 - LUECKE, 1 - LUECKE,
+                facecolor=farb if werte[karte] else "white",
+                edgecolor=farb, linewidth=0.9))
+
+    if fussnote:
+        y = len(raster)
+        ax.text(-0.4, y + 0.55, fussnote, ha="right", va="center",
+                fontsize=7, color=MUTED)
+        for x, karte in enumerate(karten):
+            gemessen = [w for a, _, _, w in raster if a == "daten"
+                        and karte in w]
+            ax.text(x + 0.5, y + 0.55, str(sum(w[karte] for w in gemessen)),
+                    ha="center", va="center", fontsize=7, color=INK)
+        beschriftungen.append("")
+
+    ax.set_aspect("equal")
+    ax.set_xlim(0, len(karten))
+    ax.set_ylim(hoehe, 0)
+    ax.set_xticks([x + 0.5 for x in range(len(karten))])
+    ax.set_xticklabels([str(k) for k in karten], fontsize=7)
+    ax.set_yticks([y + 0.5 for y in range(len(beschriftungen))])
+    ax.set_yticklabels(beschriftungen, fontsize=7)
+    ax.xaxis.set_ticks_position("top")
+    ax.xaxis.set_label_position("top")
+    ax.set_xlabel("Karte", fontsize=8, color=MUTED, labelpad=4)
+    ax.tick_params(colors=MUTED, length=0)
+    for rand in ax.spines.values():
+        rand.set_visible(False)
+    for text in ax.get_yticklabels():
+        text.set_color(INK)
+
+    if legende:
+        ax.annotate(legende, xy=(0, 0), xytext=(0, -10),
+                    xycoords="axes fraction", textcoords="offset points",
+                    fontsize=6.8, color=MUTED, va="top")
+
+    return fig, ax
+
+
+def _geloest_je_karte(zeilen, variante):
+    """{Kartennummer: 0/1} fuer eine Variante aus einer Liste von CSV-Zeilen."""
+    return {z["maze_seed"]: z["geloest"] for z in zeilen
+            if z["variante"] == variante}
+
+
+def abbildung_loesungsmatrix(runs, sweep, ablation):
+    """Alle Konfigurationen gegen die zehn Karten der Hauptmessung."""
+    karten = sorted({z["maze_seed"] for z in runs})
+    if not karten:
+        return
+
+    bloecke = []
+    for titel, namen in (("ohne Zielrichtung", ("V0", "V2", "V1K")),
+                         ("mit Zielrichtung", ("V1", "V3", "V4"))):
+        zeilen = []
+        for name in namen:
+            quelle = ablation if name == "V1K" else runs
+            werte = {k: v for k, v in _geloest_je_karte(quelle, name).items()
+                     if k in karten}
+            if werte:
+                zeilen.append((name, ZELLFARBE, werte))
+        if zeilen:
+            bloecke.append((titel, zeilen))
+
+    if sweep:
+        kurz = {"pop_size": "pop_size", "compatibility_threshold": "compat_thr",
+                "conn_add_prob": "conn_add", "node_add_prob": "node_add"}
+        gesehen, zeilen = [], []
+        for z in sweep:
+            schluessel = (z["sweep_parameter"], z["sweep_wert"])
+            if schluessel in gesehen:
+                continue
+            gesehen.append(schluessel)
+            name, wert = schluessel
+            werte = {z2["maze_seed"]: z2["geloest"] for z2 in sweep
+                     if (z2["sweep_parameter"], z2["sweep_wert"]) == schluessel}
+            zeilen.append((f"{kurz.get(name, name)} = {wert:g}", ZELLFARBE,
+                           werte))
+        if zeilen:
+            bloecke.append(("NEAT-Parameter, sonst wie V1", zeilen))
+
+    anzahl = sum(len(z) for _, z in bloecke)
+    fig, _ = _matrix(bloecke, karten, legende=LEGENDE,
+                     fussnote=f"von {anzahl} gelöst:")
+    speichern(fig, "loesungsmatrix.png")
+
+
+def abbildung_replikation(runs, ablation, replikation):
+    """Die vier auf allen zwanzig Karten gemessenen Konfigurationen."""
+    if not replikation or not ablation:
+        return
+
+    zusammen = runs + ablation + replikation
+    karten = sorted({z["maze_seed"] for z in zusammen})
+
+    bloecke = []
+    anzahl = 0
+    for titel, eintraege in (
+            ("ohne Zielrichtung", (("V0", "V0"),
+                                   ("V1K", "V1K  (konstant)"))),
+            ("mit Zielrichtung", (("V1", "V1"), ("V3", "V3  ($r=2$)")))):
+        zeilen = []
+        for name, text in eintraege:
+            werte = _geloest_je_karte(zusammen, name)
+            # Nur Konfigurationen zeigen, die auf allen Karten liefen.
+            if len(werte) == len(karten):
+                zeilen.append((f"{text}   {sum(werte.values())}/{len(karten)}",
+                               ZELLFARBE, werte))
+        anzahl += len(zeilen)
+        if zeilen:
+            bloecke.append((titel, zeilen))
+
+    if anzahl < 2:
+        return
+
+    fig, ax = _matrix(bloecke, karten, legende=LEGENDE, zusatzzeilen=1)
+    zeilen = [z for _, b in bloecke for z in b]
+
+    # Trennlinie zwischen Hauptmessung und den frischen Karten.
+    grenze = sum(1 for k in karten if k < 10)
+    if 0 < grenze < len(karten):
+        ax.axvline(grenze, color=INK, linewidth=0.9, zorder=3)
+        # Unter der letzten Zeile: Datenzeilen plus die Zeilen der Gruppentitel.
+        unten = len(zeilen) + len(bloecke) + 0.6
+        for mitte, text in ((grenze / 2, "Hauptmessung"),
+                            ((grenze + len(karten)) / 2, "frische Karten")):
+            ax.text(mitte, unten, text, ha="center", va="center",
+                    fontsize=7.5, color=MUTED)
+    speichern(fig, "replikation.png")
+
+
+# ---------------------------------------------------------------------------
 # Tabelle fuer die Ausarbeitung
 # ---------------------------------------------------------------------------
 
-def tabelle(runs, varianten):
-    """Schreibt eine mit \\input einbindbare LaTeX-Tabelle."""
+KOPF = [
+    r"% Automatisch erzeugt von python/NEAT-Code-Template/auswertung.py.",
+    r"% Nicht von Hand aendern - beim naechsten Lauf wird die Datei ersetzt.",
+]
+
+
+def _mittel(werte, stellen=1, streuung=True):
+    werte = [w for w in werte if w is not None]
+    if not werte:
+        return "--"
+    text = f"{statistics.mean(werte):.{stellen}f}"
+    if streuung and len(werte) > 1:
+        text += f" $\\pm$ {statistics.stdev(werte):.{stellen}f}"
+    return text
+
+
+def _schreiben(name, zeilen):
+    pfad = os.path.join(BERICHT_DIR, name)
+    with open(pfad, "w", encoding="utf-8") as datei:
+        datei.write("\n".join(KOPF + zeilen) + "\n")
+    print(f"  {os.path.relpath(pfad, REPO)}")
+
+
+def tabelle(runs, varianten, ablation):
+    """Kennzahlen je Wahrnehmungsvariante, mit \\input einbindbar."""
     zeilen = [
-        r"% Automatisch erzeugt von python/NEAT-Code-Template/auswertung.py.",
-        r"% Nicht von Hand aendern - beim naechsten Lauf wird die Datei ersetzt.",
         r"\begin{tabular}{@{}lrrrrr@{}}",
         r"  \toprule",
-        r"  Variante & Eingaben & gelöst & Generationen & Fitness & Schritte \\",
+        r"  Variante & Eing. & gelöst & Gen. bis Ziel & beste Fitness "
+        r"& s/Lauf \\",
         r"  \midrule",
     ]
 
-    for variante in varianten:
-        eigene = [z for z in runs if z["variante"] == variante]
+    quellen = [(v, runs) for v in varianten]
+    if ablation:
+        quellen.append(("V1K", ablation))
+
+    for variante, daten in quellen:
+        eigene = [z for z in daten if z["variante"] == variante
+                  and z["maze_seed"] < 10]
+        if not eigene:
+            continue
         geloest = [z for z in eigene if z["geloest"]]
         radius = eigene[0]["radius"]
         eingaben = (2 * radius + 1) ** 2 - 1 + 2 * eigene[0]["zielrichtung"]
 
-        def mittel(werte, stellen=1):
-            werte = [w for w in werte if w is not None]
-            if not werte:
-                return "--"
-            text = f"{statistics.mean(werte):.{stellen}f}"
-            if len(werte) > 1:
-                text += f" $\\pm$ {statistics.stdev(werte):.{stellen}f}"
-            return text
-
         zeilen.append(
             f"  {variante} & {eingaben} & "
             f"{len(geloest)}/{len(eigene)} & "
-            f"{mittel([z['ziel_generation'] for z in geloest])} & "
-            f"{mittel([z['beste_fitness'] for z in eigene], 2)} & "
-            f"{mittel([z['schritte_bester'] for z in geloest])} \\\\")
+            f"{_mittel([z['ziel_generation'] for z in geloest])} & "
+            f"{_mittel([z['beste_fitness'] for z in eigene], 2)} & "
+            f"{_mittel([z['laufzeit_s'] for z in eigene], 0, False)} \\\\")
 
     zeilen += [r"  \bottomrule", r"\end{tabular}"]
+    _schreiben("ergebnistabelle.tex", zeilen)
 
-    pfad = os.path.join(BERICHT_DIR, "ergebnistabelle.tex")
-    with open(pfad, "w", encoding="utf-8") as datei:
-        datei.write("\n".join(zeilen) + "\n")
-    print(f"  {os.path.relpath(pfad, REPO)}")
+
+def tabelle_sweep(runs, sweep):
+    """
+        Kennzahlen je Sweep-Konfiguration.
+
+        Die Spalte Evaluationen ist noetig, weil Generationen ueber
+        verschiedene pop_size hinweg nicht vergleichbar sind: eine Generation
+        mit 250 Individuen kostet ein Viertel einer Generation mit 1000.
+    """
+    if not sweep:
+        return
+
+    variante = sweep[0]["variante"]
+    basis = [z for z in runs if z["variante"] == variante]
+
+    zeilen = [
+        r"\begin{tabular}{@{}llrrrr@{}}",
+        r"  \toprule",
+        r"  Parameter & Wert & gelöst & Gen. & Eval. & s/Lauf \\",
+        r"  \midrule",
+    ]
+
+    def block(name, wert, daten, hinweis=""):
+        geloest = [z for z in daten if z["geloest"]]
+        pop = daten[0]["pop_size"]
+        evals = [pop * (z["ziel_generation"] + 1) for z in geloest]
+        return (f"  {name} & {wert}{hinweis} & "
+                f"{len(geloest)}/{len(daten)} & "
+                f"{_mittel([z['ziel_generation'] for z in geloest], 1, False)} & "
+                f"{_mittel(evals, 0, False)} & "
+                f"{_mittel([z['laufzeit_s'] for z in daten], 0, False)} \\\\")
+
+    if basis:
+        zeilen.append(block(r"\emph{Referenz}", variante, basis))
+        zeilen.append(r"  \midrule")
+
+    gesehen = []
+    for z in sweep:
+        if z["sweep_parameter"] not in gesehen:
+            gesehen.append(z["sweep_parameter"])
+
+    for name in gesehen:
+        eigene = [z for z in sweep if z["sweep_parameter"] == name]
+        for wert in sorted({z["sweep_wert"] for z in eigene}):
+            daten = [z for z in eigene if z["sweep_wert"] == wert]
+            zeilen.append(block(name.replace("_", r"\_"), f"{wert:g}", daten))
+
+    zeilen += [r"  \bottomrule", r"\end{tabular}"]
+    _schreiben("sweeptabelle.tex", zeilen)
 
 
 # ---------------------------------------------------------------------------
 
 def main():
-    runs, gen, sweep = lade()
+    runs, gen, sweep, ablation, replikation = lade()
     varianten = vorhandene_varianten(runs)
     if not varianten:
         raise SystemExit("runs.csv enthält keine auswertbaren Zeilen.")
@@ -370,13 +631,20 @@ def main():
     print(f"{len(runs)} Läufe, Varianten: {', '.join(varianten)}")
     if unvollstaendig:
         print(f"Noch ohne Daten: {', '.join(unvollstaendig)}")
+    for name, daten in (("Sweep", sweep), ("Ablation", ablation),
+                        ("Replikation", replikation)):
+        print(f"{name}: {len(daten)} Läufe" if daten
+              else f"{name}: keine Daten")
     print("\nErzeugt:")
 
     abbildung_erfolgsquote(runs, varianten)
     abbildung_fitnessverlauf(gen, varianten)
     abbildung_generationen(runs, varianten)
     abbildung_sweep(runs, sweep)
-    tabelle(runs, varianten)
+    abbildung_loesungsmatrix(runs, sweep, ablation)
+    abbildung_replikation(runs, ablation, replikation)
+    tabelle(runs, varianten, ablation)
+    tabelle_sweep(runs, sweep)
 
 
 if __name__ == "__main__":
