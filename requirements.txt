@@ -1,0 +1,12 @@
+# Abhaengigkeiten der Hausarbeit (Python 3.14).
+# Installation: python -m venv .venv && .venv/bin/pip install -r requirements.txt
+#
+# Die Versionen sind festgelegt, weil die Messergebnisse in ergebnisse/
+# genau mit diesen Versionen entstanden sind.
+neat-python==2.0.0
+graphviz==0.21
+matplotlib==3.11.0
+
+# Hinweis: das Python-Paket graphviz genuegt zum Importieren, aber
+# visualize.draw_net() braucht zusaetzlich das Programm 'dot' aus dem
+# systemweiten Graphviz-Paket
