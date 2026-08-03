@@ -44,6 +44,18 @@ VARIANTEN = {
     "V4": {"radius": 3, "zielrichtung": True},
 }
 
+# Ablationsvariante zu H1. Sie steht bewusst NICHT in VARIANTEN, damit die
+# Hauptmessung und die Farbzuordnung der Abbildungen unveraendert bleiben.
+# V1K entspricht V1 in Eingabelaenge, Netzgroesse und Startpopulation, bekommt
+# an den beiden Zielrichtungs-Eingaengen aber eine Konstante statt der echten
+# Werte. Nur damit ist trennbar, ob die Zielrichtung Information liefert oder
+# ob V1 nur an den zwei zusaetzlichen Eingaengen haengt.
+ABLATION = {
+    "V1K": {"radius": 1, "zielrichtung": True, "zielkonstante": -0.5},
+}
+
+ALLE_VARIANTEN = {**VARIANTEN, **ABLATION}
+
 # Abweichende NEAT-Parameter fuer einen einzelnen Durchgang. Leer lassen fuer
 # die Hauptmessung.
 NEAT_PARAMETER = {}
@@ -186,12 +198,15 @@ def einzellauf(variante, wiederholung, parameter=None):
         `parameter` ueberschreibt einzelne NEAT-Parameter; ohne Angabe gilt
         NEAT_PARAMETER. Der Sweep zu H4 reicht hier seine Werte herein.
     """
-    einstellung = VARIANTEN[variante]
+    einstellung = ALLE_VARIANTEN[variante]
 
     # Stellschrauben der Wahrnehmung setzen. agent_neat liest die Globals bei
-    # jedem Aufruf, die Aenderung wirkt also sofort.
+    # jedem Aufruf, die Aenderung wirkt also sofort. Die Konstante wird auch
+    # dann gesetzt, wenn die Variante keine hat, damit ein vorheriger Lauf
+    # nicht in den naechsten hineinwirkt.
     agent_neat.RADIUS = einstellung["radius"]
     agent_neat.USE_GOAL_DIR = einstellung["zielrichtung"]
+    agent_neat.GOAL_DIR_CONSTANT = einstellung.get("zielkonstante")
 
     karte = agent_neat.make_maze(wiederholung).map
     agent_neat.seed_run(wiederholung)

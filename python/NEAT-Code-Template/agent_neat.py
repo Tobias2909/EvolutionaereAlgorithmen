@@ -33,6 +33,16 @@ RADIUS = 1
 # zwangslaeufig dieselbe Richtung, egal wo das Ziel liegt.
 USE_GOAL_DIR = False
 
+# Ablationstest zu H1: ersetzt die beiden Zielrichtungs-Eingaben durch eine
+# Konstante. None bedeutet echte Werte.
+#   Der Vergleich V0 gegen V1 aendert zwei Dinge gleichzeitig: die Information
+#   verschwindet UND der Eingabevektor wird kuerzer, das Netz also kleiner.
+#   Eine Konstante laesst num_inputs und damit den Suchraum unveraendert und
+#   nimmt nur die Information weg. Erst damit ist trennbar, ob die Zielrichtung
+#   nuetzt oder ob sie nur den Suchraum vergroessert. Ein konstanter Eingang ist
+#   funktional ein zweiter Bias-Pfad.
+GOAL_DIR_CONSTANT = None
+
 # Seeds fuer die beiden Zufallsquellen des Versuchs. Wiederholung i der Studie
 # benutzt spaeter MAZE_SEED = i und RUN_SEED = i, sodass jede Variante auf
 # denselben zehn Labyrinthen mit denselben Startpopulationen geprueft wird.
@@ -249,7 +259,14 @@ class Agent:
             Die Normierung ueber die Kantenlaenge der Karte sorgt dafuer, dass
             diese Werte in derselben Groessenordnung liegen wie die Wandfelder
             (0 oder 1) und sie nicht allein durch ihren Betrag ueberdecken.
+
+            Mit GOAL_DIR_CONSTANT liefert die Methode stattdessen zwei
+            konstante Werte: gleiche Vektorlaenge, gleiche Groessenordnung,
+            keine Information (Ablationstest, siehe Dateikopf).
         """
+        if GOAL_DIR_CONSTANT is not None:
+            return [GOAL_DIR_CONSTANT, GOAL_DIR_CONSTANT]
+
         spanne = len(self.map) - 1
         return [(self.goal_x - self.pos_x) / spanne,
                 (self.goal_y - self.pos_y) / spanne]
