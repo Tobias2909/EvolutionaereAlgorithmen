@@ -20,15 +20,9 @@
 %% Deutsche Anführungszeichen über \enquote{...}.
 \usepackage{csquotes}
 
-%% PROVISORIUM, entfernen sobald Kapitel 6 und 7 geschrieben sind.
-%% Hinter Kapitel 5 stehen zurzeit nur Platzhalter. Dadurch bleibt zu wenig
-%% Text uebrig, um die letzte Abbildung zu platzieren: \textfraction verlangt
-%% mindestens 20 %% Text je Seite, und eine reine Float-Seite verlangt einen
-%% Float, der mindestens \floatpagefraction der Spalte fuellt. Die Abbildung
-%% faellt dann kommentarlos aus dem PDF und die Referenz bleibt als ?? stehen.
-%% \FloatBarrier am Kapitelende erzwingt die Ausgabe.
-\usepackage{array}      % Spaltentyp >{\raggedright...}
-\usepackage{placeins}
+%% Spaltentyp >{\raggedright\arraybackslash} fuer Tabelle 3.
+\usepackage{array}
+
 
 %% Quelltext-Listings für die Code-Ausschnitte im Kapitel "Ausgangszustand".
 \usepackage{listings}
@@ -85,7 +79,15 @@
 %% Abstract
 %% ---------------------------------------------------------------------------
 \begin{abstract}
-  Abstract-Text here
+  Ein mit NEAT evolvierter Agent löst ein 25$\times$25-Labyrinth nur unzuverlässig. Diese Arbeit
+  prüft, ob ihm dafür Wahrnehmung fehlt. Fünf Varianten mit Sichtradius 1 bis 3 und optionaler
+  Zielrichtung treten auf denselben Karten gegeneinander an, ergänzt um eine Ablationsvariante
+  und eine Studie zu vier NEAT-Parametern, zusammen 237 Läufe. Keine der Änderungen verschiebt
+  messbar, welche Labyrinthe gelöst werden. Die Zielrichtung bringt über zwanzig Karten 1,5
+  Karten ($p = 0{,}357$), ein größerer Sichtradius ändert die Lösungsmenge überhaupt nicht und
+  kostet bis zum 3,8-Fachen an Rechenzeit. Ein auf den ersten zehn Karten überzeugender Effekt
+  verschwand auf frischen Karten wieder. Was die Ergebnisse dominiert, ist die Schwierigkeit
+  der einzelnen Karte.
 \end{abstract}
 
 %% CCS-Concepts optional. Für den Kurs weglassen oder minimal halten.
@@ -98,9 +100,9 @@
 
 %% ===========================================================================
 \section{Einführung}
-Im Sommersemester 2026 wurde an der Hochschule für Angewandte Wissenschaften in Hamburg der Wahlpflichtkurs Evolutionäre Algorithmen von Prof. Dr.-Ing. Christian Lins angeboten. Im Verlauf dieses Kurses wurden Themen wie Hill Climbing, Differential Evolution, Genetische Algorithmen und NEAT in praktischen Übungen vertieft. Zum Kurs gehört ein Praktikum aus sechs aufeinander aufbauenden Aufgabenblättern diese Ausarbeitung knüpft an das dritte an, in dem mit NEAT ein neuronales Netz evolviert wird, das einen Agenten durch ein zufällig erzeugtes Labyrinth steuert.
+Im Sommersemester 2026 wurde an der Hochschule für Angewandte Wissenschaften in Hamburg der Wahlpflichtkurs Evolutionäre Algorithmen von Prof. Dr.-Ing. Christian Lins angeboten. Im Verlauf dieses Kurses wurden Themen wie Hill Climbing, Differential Evolution, Genetische Algorithmen und NEAT in praktischen Übungen vertieft. Zum Kurs gehört ein Praktikum aus sechs aufeinander aufbauenden Aufgabenblättern. Diese Ausarbeitung knüpft an das dritte an, in dem mit NEAT~\cite{stanley2002neat} ein neuronales Netz evolviert wird, das einen Agenten durch ein zufällig erzeugtes Labyrinth steuert.
 
-Bei der Bearbeitung ist mir aufgefallen, dass der Agent zwar lernt, nicht gegen Wände zu laufen, das Ziel aber nur selten und eher zufällig erreicht. Der Grund liegt in den Eingaben: Die acht Umgebungsfelder sagen dem Netz, wohin es sich bewegen \emph{kann}, aber nicht, wohin es sich bewegen \emph{sollte}. Ein vorwärtsgerichtetes Netz bildet dieselbe Eingabe immer auf dieselbe Ausgabe ab, also führen zwei lokal gleich aussehende Stellen im Labyrinth zwangsläufig zur selben Bewegungsrichtung -- unabhängig davon, wo das Ziel liegt. Das Aufgabenblatt nennt die acht Felder allerdings nur als Untergrenze und stellt ausdrücklich frei, dem Agenten \enquote{vielleicht etwas mehr} zu zeigen.
+Bei der Bearbeitung ist mir aufgefallen, dass der Agent zwar lernt, nicht gegen Wände zu laufen, das Ziel aber nur selten und eher zufällig erreicht. Der Grund liegt in den Eingaben: Die acht Umgebungsfelder sagen dem Netz, wohin es sich bewegen \emph{kann}, aber nicht, wohin es sich bewegen \emph{sollte}. Ein vorwärtsgerichtetes Netz bildet dieselbe Eingabe immer auf dieselbe Ausgabe ab, also führen zwei lokal gleich aussehende Stellen im Labyrinth zwangsläufig zur selben Bewegungsrichtung -- unabhängig davon, wo das Ziel liegt. Das Aufgabenblatt~\cite{lins2026lab03} nennt die acht Felder allerdings nur als Untergrenze und stellt ausdrücklich frei, dem Agenten \enquote{vielleicht etwas mehr} zu zeigen.
 
 Daraus ergibt sich die Fragestellung: Wie viel Wahrnehmung -- in Form von Zielrichtung und Sichtradius -- braucht der Agent, um ein Labyrinth zuverlässig zu lösen, und ab wann schadet mehr Eingabe mehr, als sie nützt? Der zweite Teil ist dabei genauso wichtig wie der erste, denn jede zusätzliche Eingabe vergrößert das Netz und damit den Suchraum, den NEAT durchsuchen muss. Meine Vermutung ist deshalb ein \enquote{Sweet Spot}. Mehr Wahrnehmung hilft bis zu einem Punkt und wird danach zum Nachteil. Ergänzend werden einige NEAT-Parameter variiert. Kapitel~\ref{sec:ausgangszustand} beschreibt die Aufgabe und den Stand des Codes, Kapitel~\ref{sec:vorgehen} die Varianten und die vorab festgelegten Hypothesen, die Kapitel~\ref{sec:durchfuehrung} bis \ref{sec:fazit} Umsetzung, Messwerte und Bewertung.
 
@@ -109,9 +111,9 @@ Daraus ergibt sich die Fragestellung: Wie viel Wahrnehmung -- in Form von Zielri
 \label{sec:ausgangszustand}
 
 \subsection{Aufgabenstellung und Umsetzung}
-Das Aufgabenblatt verlangt, mit \texttt{neat-python} Individuen mit mindestens acht Eingängen (die acht Umgebungsfelder) und vier Ausgängen (die vier Richtungen) zu evolvieren, eine Fitness-Funktion zu schreiben, die den Agenten schrittweise durch eine zufällig erzeugte Karte steuert, und Pfad sowie bestes Netz zu visualisieren. Der Agent hat ein festes Schrittbudget und bekommt die beste Bewertung, wenn er das Ziel erreicht andernfalls muss die Fitness sinnvoll skaliert werden, etwa über den Abstand zum Ziel oder die Anzahl erfolgreicher Schritte. Kartengröße, Start- und Zielpunkt sind frei wählbar, und das Blatt fordert explizit zum Experimentieren mit Zielfunktionen und Kartenparametern auf.
+Das Aufgabenblatt verlangt, mit \texttt{neat-python}~\cite{neatpython} Individuen mit mindestens acht Eingängen (die acht Umgebungsfelder) und vier Ausgängen (die vier Richtungen) zu evolvieren, eine Fitness-Funktion zu schreiben, die den Agenten schrittweise durch eine zufällig erzeugte Karte steuert, und Pfad sowie bestes Netz zu visualisieren. Der Agent hat ein festes Schrittbudget und bekommt die beste Bewertung, wenn er das Ziel erreicht. Andernfalls muss die Fitness sinnvoll skaliert werden, etwa über den Abstand zum Ziel oder die Anzahl erfolgreicher Schritte. Kartengröße, Start- und Zielpunkt sind frei wählbar, und das Blatt fordert explizit zum Experimentieren mit Zielfunktionen und Kartenparametern auf.
 
-Meine Umsetzung baut auf der mitgelieferten Vorlage \texttt{agent-\allowbreak neat-\allowbreak vorlage.py} auf. Die Klasse \texttt{MapGenerator} erzeugt eine 25$\times$25-Karte, in der jedes Feld mit 25\,\% Wahrscheinlichkeit eine Wand ist. Der Agent startet unten rechts und soll das Ziel oben links erreichen, gezeichnet wird über ein Tkinter-Canvas. Zwei Ungenauigkeiten der Vorlage seien erwähnt, weil sie beim Lesen des Codes irritieren: Die Marker \texttt{'S'} und \texttt{'E'} sind gegenüber der Agentensicht vertauscht, und die Richtungsnamen in \texttt{move()} passen nicht zur Zeichenrichtung des Canvas. Beides ist rein kosmetisch, da das Netz seine Ausgänge nur über deren Wirkung lernt.
+Meine Umsetzung baut auf der mitgelieferten Vorlage \texttt{agent-\allowbreak neat-\allowbreak vorlage.py} auf. Die Klasse \texttt{MapGenerator} erzeugt eine 25$\times$25-Karte, in der jedes Feld mit 25\,\% Wahrscheinlichkeit eine Wand ist. Der Agent startet unten rechts und soll das Ziel oben links erreichen, gezeichnet wird über ein Tkinter-Canvas. Zwei Ungenauigkeiten der Vorlage seien erwähnt, weil sie beim Lesen des Codes irritieren: Die Marker \texttt{'S'} und \texttt{'E'} sind gegenüber der Agentensicht vertauscht, und die Richtungsnamen in \texttt{move()} passen nicht zur Zeichenrichtung des Canvas. Beides ist rein kosmetisch, da das Netz seine Ausgänge nur über deren Wirkung lernt. Als Einstieg in \texttt{neat-python} dient die im Aufgabenblatt genannte Kursliteratur, Kapitel~2 ab Seite~39 in~\cite{omelianenko2019}.
 
 \texttt{move()} prüft, ob das Zielfeld innerhalb der Karte und keine Wand ist. Ungültige Schritte lassen den Agenten stehen, verbrauchen aber trotzdem einen Schritt. Zusätzlich habe ich einen Schalter für Backtracking eingebaut. Aktiv ist die Variante ohne: Besuchte Felder gelten als gesperrt, damit ein Netz nicht einfach zwischen zwei Feldern pendelt. Im Gegenzug ist eine Sackgasse endgültig, denn ab dort ist jeder weitere Schritt ungültig.
 
@@ -264,7 +266,7 @@ Wiederholung $i$ benutzt Labyrinth $i$ und Lauf-Seed $i$. Beide Zufallsquellen s
 
 Vier Skripte teilen sich die Arbeit. \texttt{experiment.py} rechnet die Wahrnehmungsvarianten, \texttt{sweep.py} die Parameterstudie, \texttt{ablation.py} die Kontrollvariante V1K, und \texttt{auswertung.py} erzeugt aus den CSV-Dateien alle Abbildungen und Tabellen dieses Berichts. Im Batch bleibt die Tkinter-Oberfläche aus, weil \texttt{mainloop()} sonst blockiert. Jeder Lauf schreibt seine Zeile sofort, damit ein Abbruch nach Stunden nicht die ganze Messreihe kostet.
 
-Zwei Prüfgrößen tauchen in den Ergebnissen mehrfach auf. Der \emph{Vorzeichentest} zählt, auf wie vielen Karten die eine Variante gewinnt und auf wie vielen die andere. Sind beide gleich gut, ist jede Richtung gleich wahrscheinlich, und $k$ gleichgerichtete Karten haben die Wahrscheinlichkeit $0{,}5^k$. Daraus folgt eine harte Grenze des Aufbaus: Unterscheiden sich zwei Varianten nur auf zwei Karten, ist Signifikanz von vornherein unmöglich. Der \emph{Permutationstest} mischt die Ergebnisse innerhalb jeder Karte neu durch und hält damit die Kartenschwierigkeit fest. Er beantwortet, wie oft allein durch Zufall so große Unterschiede zwischen den Konfigurationen entstehen wie die gemessenen.
+Zwei Prüfgrößen tauchen in den Ergebnissen mehrfach auf. Der \emph{Vorzeichentest} zählt, auf wie vielen Karten die eine Variante gewinnt und auf wie vielen die andere. Sind beide gleich gut, ist jede Richtung gleich wahrscheinlich, und $k$ gleichgerichtete Karten haben die Wahrscheinlichkeit $0{,}5^k$. Daraus folgt eine harte Grenze des Aufbaus: Unterscheiden sich zwei Varianten nur auf zwei Karten, ist Signifikanz von vornherein unmöglich. Der \emph{Permutationstest} nach Fisher~\cite{fisher1935} mischt die Ergebnisse innerhalb jeder Karte neu durch und hält damit die Kartenschwierigkeit fest. Er beantwortet, wie oft allein durch Zufall so große Unterschiede zwischen den Konfigurationen entstehen wie die gemessenen.
 
 \subsection{Verworfene Erweiterung}
 Die zehn Karten der Hauptmessung werden von vielen Konfigurationen gelöst, was die Varianten schlecht trennt. Naheliegend war, die Wanddichte anzuheben. Ein Pilot über acht Karten zeigte bei 0,30 und 0,35 aber das Gegenteil: Der Anteil der Karten, die überhaupt trennen, sank von 20\,\% auf 12\,\%, weil an die Stelle des Deckeneffekts ein Bodeneffekt trat. Die Sackgassen stiegen dabei von 30 auf 54 je Karte, während der kürzeste Weg mit 48 auf 53 Schritten fast gleich blieb.
@@ -315,7 +317,7 @@ Damit fällt die konfigurierte Fitness-Schwelle von 40,0 mit dem Erreichen des Z
 
 Die Schrittzahl des besten Agenten liegt zwischen 48 und 60, bei kürzesten Wegen von 48 bis 50, und stimmt in 108 der 139 gelösten Läufe mit dem kürzesten Weg überein. Die übrigen 31 Läufe brauchen bis zu zehn Schritte mehr und erreichen trotzdem dieselbe Fitness. Das entspricht der Formel: Der Abzug von 0,1 je Schritt und der Bonus von 0,1 je gültigem Schritt heben sich auf, sodass allein ungültige Schritte Fitness kosten.
 
-Über die 14 Konfigurationen hinweg ist die mittlere beste Fitness fast vollständig durch die Zahl der gelösten Karten bestimmt. Innerhalb einer Lösungszahl streut sie um 0,3 bis 2,8 Punkte, zwischen benachbarten Lösungszahlen um 2,5 bis 5,5.
+Über die 14 Konfigurationen hinweg ist die mittlere beste Fitness fast vollständig durch die Zahl der gelösten Karten bestimmt ($r^2 = 0{,}95$). Innerhalb einer Lösungszahl streut sie um 0,3 bis 2,8 Punkte, zwischen benachbarten Lösungszahlen um 2,5 bis 5,5.
 
 \subsection{Unterschiede zwischen den Karten}
 Die zehn Karten der Hauptmessung tragen 22,6\,\% bis 29,0\,\% Wände, ihr kürzester Weg ist 48 oder 50 Schritte lang. Ihre Ergebnisse gehen weit auseinander (Fußzeile in Abbildung~\ref{abb:matrix}): Die Karten 2, 3, 5, 6 und 9 lösen alle 14 Konfigurationen, Karte~7 löst genau eine und Karte~4 drei. Nur die Karten 0, 1 und 8 werden von einem Teil der Konfigurationen gelöst und von einem anderen nicht.
@@ -332,7 +334,7 @@ Abbildung~\ref{abb:replikation} stellt die vier auf allen zwanzig Karten gemesse
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=\textwidth]{abbildungen/replikation}
+  \includegraphics[width=0.85\textwidth]{abbildungen/replikation}
   \Description{Matrix aus vier Zeilen und 20 Spalten, getrennt nach zehn bekannten und zehn frischen Karten. Links trennen die Karten 0 und 8 nach Zielrichtung, rechts nicht.}
   \caption{Die vier Konfigurationen, die auf allen zwanzig Karten gerechnet wurden. Links die zehn Karten der Hauptmessung, rechts zehn vorher ungenutzte. Die Trennung nach Zielrichtung auf den Karten 0 und 8 wiederholt sich rechts nicht.}
   \label{abb:replikation}
@@ -354,26 +356,46 @@ Deutlich sind dagegen die Aufwandsunterschiede. Die Generationen bis zum Ziel h�
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=\columnwidth]{abbildungen/parameter_sweep}
+  \includegraphics[width=0.85\columnwidth]{abbildungen/parameter_sweep}
   \Description{Vier kleine Liniendiagramme der Erfolgsquote über je drei Parameterwerte. Alle Quoten liegen zwischen 60 und 90 Prozent.}
   \caption{Erfolgsquote je Parameterwert. Der hohle Punkt ist der Referenzwert aus der Hauptmessung.}
   \label{abb:sweep}
 \end{figure}
 
-%% PROVISORIUM, siehe Praeambel: raus, sobald hier Text steht.
-\FloatBarrier
 
 \section{Diskussion}
 \label{sec:diskussion}
-Interpretation, Hypothesen bestätigt/verworfen, eigene Einschätzung.
+
+\subsection{Die vier Hypothesen}
+\textbf{H1 ist widerlegt.} Ich hatte die Zielrichtung für den entscheidenden Faktor gehalten, und auf den ersten zehn Karten sah es genau danach aus. Die Karten 0 und 8 wurden von allen drei Konfigurationen mit Zielrichtung gelöst und von allen drei ohne verfehlt, eine saubere Trennung, zweimal. Auf zehn frischen Karten verschwindet sie. V3 löst dort dieselben Karten wie V0, und V1K holt eine Karte, die V1 verfehlt. Über alle zwanzig Karten bleiben 1,5 Karten Unterschied bei $p=0{,}357$.
+
+Der Grund liegt vermutlich darin, dass Start und Ziel fest sind. Weil das Ziel immer in derselben Ecke liegt, ist die \emph{Richtung} dorthin konstant und das Vorzeichen beider Eingaben wechselt nie. Eine konstante Vorliebe für oben links kann das Netz gratis in seine Bias-Gewichte legen. Was $\Delta x$ und $\Delta y$ zusätzlich liefern, ist genau genommen die absolute Position. Die könnte helfen, zwei gleich aussehende Stellen auseinanderzuhalten, aber der Engpass ist ein anderer: Ohne Backtracking ist jede Sackgasse endgültig, und ob vor einem eine Sackgasse liegt, steht in den lokalen Wandfeldern und nicht in der Position. Lehman und Stanley beschreiben genau diese Klasse von Labyrinthaufgaben als täuschend: Eine Fitness, die den Abstand zum Ziel belohnt, führt die Suche in Sackgassen, weil der kürzeste Weg dorthin zunächst vom Ziel wegführt. Sie schlagen deshalb vor, statt des Ziels die Neuartigkeit des Verhaltens zu belohnen~\cite{lehman2011novelty}. Die hier verwendete Fitness ist genau eine solche abstandsbasierte. Bei einem wechselnden Ziel erwarte ich ein anderes Ergebnis, gemessen habe ich das nicht.
+
+\textbf{H2 ist gestützt, deutlicher als erwartet.} Ein größerer Radius ändert nicht, \emph{welche} Karten gelöst werden, sondern gar nichts: V0 und V2 lösen dieselbe Menge, V1 und V3 ebenfalls. Er kostet dabei 66\,\% mehr Rechenzeit. Von allen Ergebnissen ist das das sauberste, weil es nicht auf einem Mittelwert beruht, sondern auf identischen Mengen.
+
+\textbf{H3 ist zur Hälfte widerlegt.} Der vermutete Sweet Spot bei Radius 2 existiert nicht, weil Radius 2 überhaupt nichts bringt. Die zweite Hälfte trifft zu: Radius 3 löst eine Karte weniger, braucht auf gemeinsamen Karten 52,7 statt 28,9 Generationen und dauert das 3,8-Fache. Der beste Wert ist damit der kleinste, nicht ein mittlerer.
+
+\textbf{H4 lässt sich so nicht prüfen.} Sie behauptet, die Parameter wirkten \emph{schwächer} als die Wahrnehmung. Nachdem die Wahrnehmung keinen messbaren Effekt hat, gibt es nichts, wogegen man vergleichen könnte. Was sich sagen lässt: Auch keine der acht Parameteränderungen verschiebt die Erfolgsquote nachweisbar. Verlässlich unterscheidbar ist allein der Aufwand, und dort ist das Ergebnis eindeutig. Die Generationen bis zum Ziel hängen nicht von der Populationsgröße ab, also verbraucht \texttt{pop\_size} $=1000$ das Fünffache an Auswertungen für dasselbe Resultat.
+
+\subsection{Was der Versuch wirklich zeigt}
+Die eigentliche Aussage steckt nicht in den Varianten, sondern in den Karten. Zwölf von zwanzig Karten lösen alle Konfigurationen, vier keine, und nur vier trennen überhaupt. Die Schwierigkeit der Karte entscheidet, alles andere liegt darunter.
+
+Daraus folgt eine Grenze, die ich vorher unterschätzt habe. Wenn nur 20\,\% der Karten trennen, braucht ein Vorzeichentest rund vier bis fünf gleichgerichtete Karten für Signifikanz. Bei zwanzig Karten und vier informativen ist das die Obergrenze dessen, was der Aufbau überhaupt zeigen kann. Ein Effekt, der kleiner ist als drei bis vier Karten Unterschied, wäre in diesen Daten unsichtbar geblieben, egal wie oft ich messe. Der Befund lautet also nicht \enquote{es gibt keinen Effekt}, sondern \enquote{der vorhergesagte große Effekt existiert nicht, und ein kleiner wäre hier nicht nachweisbar}.
+
+\subsection{Grenzen und was ich anders machen würde}
+Drei Punkte schränken die Aussagekraft ein. Erstens hat die Fitness weniger Aussagekraft, als ich beim Entwurf annahm: Sie sättigt bei jedem gelösten Lauf am selben Wert, belohnt kurze Wege nicht, und ihre Schwelle fällt mit dem Zielerreichen zusammen. Über die Zahl der gelösten Karten hinaus trägt sie nur auf Karten bei, die niemand löst. Zweitens bleibt die Karte innerhalb eines Laufs konstant, das Netz darf sie also auswendig lernen. Der Versuch misst nicht, ob ein Agent Labyrinthe löst, sondern ob er diese zwanzig löst. Drittens gibt es je Konfiguration und Karte nur einen Lauf, sodass sich der Zufall des Verfahrens nicht direkt von der Wirkung der Konfiguration trennen lässt. Der Permutationstest umgeht das, indem er die Kartenschwierigkeit festhält, ersetzt aber keine Wiederholungen.
+
+Rückblickend hätte ich die falsche Stellschraube untersucht. Die dominierende Größe ist nicht die Wahrnehmung, sondern das ausgeschaltete Backtracking, das Sackgassen tödlich macht. Es habe ich bewusst konstant gehalten. Für eine Fortsetzung wären ein wechselndes Ziel, ein Vergleich mit und ohne Backtracking und ein Budget in Auswertungen statt in Generationen die drei naheliegendsten Änderungen.
 
 \section{Fazit}
 \label{sec:fazit}
-Rückblick auf das Projekt.
+Die Ausgangsfrage war, wie viel Wahrnehmung ein NEAT-Agent braucht und ab wann mehr Eingabe schadet. Die Antwort fällt anders aus als erwartet: In diesem Aufbau braucht er keine zusätzliche. Weder die Zielrichtung noch ein größerer Sichtradius verändern messbar, welche Labyrinthe gelöst werden, und beide kosten Rechenzeit. Ein Sweet Spot existiert nicht, das Optimum ist die kleinste Wahrnehmung.
+
+Fachlich am meisten mitgenommen habe ich aber etwas anderes. Zweimal sah ein Effekt in den Daten überzeugend aus, einmal mit einer rechnerischen Wahrscheinlichkeit von etwa 1 zu 400, und beide Male hat er sich auf frischen Karten in Luft aufgelöst. Aufgefallen ist das nur, weil das Kriterium jeweils vor dem Lauf feststand. Ohne diese Regel stünde in dieser Arbeit heute eine falsche Kernaussage.
 
 %% ===========================================================================
 %% Literatur: ACM-Reference-Format (bibtex). Datei references.bib.
-%\bibliographystyle{ACM-Reference-Format}
-%\bibliography{references}
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
 
 \end{document}
