@@ -53,7 +53,7 @@ GENERATIONEN = 100
 # Zahl der Spezies in der Startpopulation (pop_size 1000): 2.0 ergibt 997
 # Spezies und sprengt die Konfiguration (neat verlangt
 # pop_size >= num_species * 2), 2.4 ergibt 268, 2.8 ergibt 14, 3.0 ergibt 3,
-# und ab 3.2 bleibt genau eine Spezies uebrig - dort ist die Speziesbildung
+# und ab 3.2 bleibt genau eine Spezies uebrig dort ist die Speziesbildung
 # faktisch abgeschaltet und hoehere Werte aendern nichts mehr. Gewaehlt sind
 # deshalb 2.6 und 3.2, also einmal deutlich mehr Spezies als im Ausgangs-
 # zustand und einmal keine.
