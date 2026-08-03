@@ -178,8 +178,14 @@ class Sammler(neat.reporting.BaseReporter):
 # Ein einzelner Lauf
 # ---------------------------------------------------------------------------
 
-def einzellauf(variante, wiederholung):
-    """Rechnet eine Wiederholung einer Variante und gibt ihre Kennzahlen zurueck."""
+def einzellauf(variante, wiederholung, parameter=None):
+    """
+        Rechnet eine Wiederholung einer Variante und gibt ihre Kennzahlen
+        zurueck.
+
+        `parameter` ueberschreibt einzelne NEAT-Parameter; ohne Angabe gilt
+        NEAT_PARAMETER. Der Sweep zu H4 reicht hier seine Werte herein.
+    """
     einstellung = VARIANTEN[variante]
 
     # Stellschrauben der Wahrnehmung setzen. agent_neat liest die Globals bei
@@ -191,7 +197,8 @@ def einzellauf(variante, wiederholung):
     agent_neat.seed_run(wiederholung)
 
     config = agent_neat.load_config()
-    for name, wert in NEAT_PARAMETER.items():
+    for name, wert in (NEAT_PARAMETER if parameter is None
+                       else parameter).items():
         if name == "pop_size":
             config.pop_size = wert
         elif name == "compatibility_threshold":

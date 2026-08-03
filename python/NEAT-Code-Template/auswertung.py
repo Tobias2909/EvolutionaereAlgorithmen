@@ -95,7 +95,9 @@ def lade():
                      "beste_fitness", "schritte_bester", "netz_knoten",
                      "netz_verbindungen", "pop_size", "generation",
                      "mittlere_fitness", "stdabw_fitness", "anzahl_spezies",
-                     "ziel_erreicht", "laufzeit_s"}
+                     "ziel_erreicht", "laufzeit_s", "sweep_wert",
+                     "compatibility_threshold", "conn_add_prob",
+                     "node_add_prob"}
 
     def lesen(pfad):
         with open(pfad, encoding="utf-8") as datei:
@@ -106,7 +108,11 @@ def lade():
             return zeilen
 
     gen = lesen(pfad_gen) if os.path.exists(pfad_gen) else []
-    return lesen(pfad_runs), gen
+
+    pfad_sweep = os.path.join(experiment.ERGEBNIS_DIR, "sweep_runs.csv")
+    sweep = lesen(pfad_sweep) if os.path.exists(pfad_sweep) else []
+
+    return lesen(pfad_runs), gen, sweep
 
 
 def vorhandene_varianten(runs):
@@ -240,6 +246,73 @@ def abbildung_generationen(runs, varianten):
     speichern(fig, "generationen_bis_ziel.png")
 
 
+def abbildung_sweep(runs, sweep):
+    """
+        Vier kleine Diagramme, eines je NEAT-Parameter: Erfolgsquote ueber den
+        Parameterwert.
+
+        Der Ausgangswert wurde nicht erneut gerechnet, sondern stammt aus der
+        Hauptmessung, er ist hohl gezeichnet, damit die Herkunft sichtbar
+        bleibt. Getrennte Diagramme statt eines gemeinsamen, weil die vier
+        Parameter voellig verschiedene Wertebereiche haben und in ein Bild
+        gezwungen nur ueber eine zweite Achse passen wuerden.
+    """
+    if not sweep:
+        return
+
+    variante = sweep[0]["variante"]
+    basis = [z for z in runs if z["variante"] == variante]
+    namen = []
+    for z in sweep:
+        if z["sweep_parameter"] not in namen:
+            namen.append(z["sweep_parameter"])
+
+    fig, achsen = plt.subplots(2, 2, figsize=(BREITE, 2.9), sharey=True)
+    grundfarbe = farbe(variante)
+
+    for ax, name in zip(achsen.flat, namen):
+        eigene = [z for z in sweep if z["sweep_parameter"] == name]
+        werte = sorted({z["sweep_wert"] for z in eigene})
+
+        basiswert = basis[0][name] if basis and name in basis[0] else None
+        if basiswert is not None and basiswert not in werte:
+            werte = sorted(werte + [basiswert])
+
+        x, y, ist_basis = [], [], []
+        for i, wert in enumerate(werte):
+            if wert == basiswert:
+                quelle = basis
+            else:
+                quelle = [z for z in eigene if z["sweep_wert"] == wert]
+            if not quelle:
+                continue
+            x.append(i)
+            y.append(sum(z["geloest"] for z in quelle) / len(quelle))
+            ist_basis.append(wert == basiswert)
+
+        ax.plot(x, y, color=grundfarbe, linewidth=1.4, zorder=1)
+        for xi, yi, b in zip(x, y, ist_basis):
+            ax.plot([xi], [yi], marker="o", markersize=5, zorder=2,
+                    color="white" if b else grundfarbe,
+                    markeredgecolor=grundfarbe, markeredgewidth=1.4)
+
+        ax.set_xticks(range(len(werte)))
+        ax.set_xticklabels([f"{w:g}" for w in werte], fontsize=6.5)
+        ax.set_xlim(-0.4, len(werte) - 0.6)
+        ax.set_ylim(-0.05, 1.1)
+        ax.set_yticks([0, 0.5, 1.0])
+        ax.set_yticklabels(["0 %", "50 %", "100 %"])
+        ax.set_title(name.replace("_", " "), fontsize=7, color=INK, pad=3)
+        stil(ax)
+
+    for ax in achsen.flat[len(namen):]:
+        ax.set_visible(False)
+
+    fig.supylabel("gelöste Läufe", fontsize=8, color=MUTED)
+    fig.tight_layout(pad=0.3)
+    speichern(fig, "parameter_sweep.png")
+
+
 # ---------------------------------------------------------------------------
 # Tabelle fuer die Ausarbeitung
 # ---------------------------------------------------------------------------
@@ -288,7 +361,7 @@ def tabelle(runs, varianten):
 # ---------------------------------------------------------------------------
 
 def main():
-    runs, gen = lade()
+    runs, gen, sweep = lade()
     varianten = vorhandene_varianten(runs)
     if not varianten:
         raise SystemExit("runs.csv enthält keine auswertbaren Zeilen.")
@@ -302,6 +375,7 @@ def main():
     abbildung_erfolgsquote(runs, varianten)
     abbildung_fitnessverlauf(gen, varianten)
     abbildung_generationen(runs, varianten)
+    abbildung_sweep(runs, sweep)
     tabelle(runs, varianten)
 
 
