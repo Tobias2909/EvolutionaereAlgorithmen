@@ -20,6 +20,16 @@
 %% Deutsche Anführungszeichen über \enquote{...}.
 \usepackage{csquotes}
 
+%% PROVISORIUM, entfernen sobald Kapitel 6 und 7 geschrieben sind.
+%% Hinter Kapitel 5 stehen zurzeit nur Platzhalter. Dadurch bleibt zu wenig
+%% Text uebrig, um die letzte Abbildung zu platzieren: \textfraction verlangt
+%% mindestens 20 %% Text je Seite, und eine reine Float-Seite verlangt einen
+%% Float, der mindestens \floatpagefraction der Spalte fuellt. Die Abbildung
+%% faellt dann kommentarlos aus dem PDF und die Referenz bleibt als ?? stehen.
+%% \FloatBarrier am Kapitelende erzwingt die Ausgabe.
+\usepackage{array}      % Spaltentyp >{\raggedright...}
+\usepackage{placeins}
+
 %% Quelltext-Listings für die Code-Ausschnitte im Kapitel "Ausgangszustand".
 \usepackage{listings}
 \lstset{
@@ -138,6 +148,7 @@ Die Methode \texttt{run()} führt pro Agent bis zu \texttt{MAX\_STEPS} $=$ 156 S
 Der erste Term belohnt nicht den Abstand am Ende, sondern die größte je erreichte Annäherung, sodass ein Agent seinen Fortschritt nicht verliert, wenn er später in eine Sackgasse läuft. Der Bonus von 10 hebt erfolgreiche Agenten deutlich ab, und die Schrittbilanz bestraft effektiv nur ungültige Schritte. Bei einem Startabstand von $\sqrt{24^2+24^2} \approx 33{,}94$ läge die maximal erreichbare Fitness bei rund 43,94, und die konfigurierte \texttt{fitness\_threshold} von 40,0 wäre ein brauchbares Abbruchkriterium für \enquote{gelöst} -- vorausgesetzt, der Agent kann das Zielfeld überhaupt betreten. Genau das ist im Ausgangszustand nicht der Fall, wie der folgende Abschnitt zeigt.
 
 \subsection{NEAT-Konfiguration und Schwachstellen}
+\label{sec:schwachstellen}
 \texttt{eval\_genomes()} baut aus jedem Genom ein Netz, lässt einen frischen Agenten laufen und schreibt dessen Fitness zurück. Alle Genome werden auf derselben Karte bewertet, da der Aufruf zum Neuerzeugen pro Generation auskommentiert ist. Das macht die Läufe vergleichbar, erlaubt einem Netz aber prinzipiell, die Karte auswendig zu lernen. Tabelle~\ref{tab:config} zeigt die wichtigsten Parameter aus \texttt{neat-config}. Gerechnet wird mit 1000 Individuen über maximal 100 Generationen, mit vorzeitigem Abbruch beim Überschreiten der Fitness-Schwelle.
 
 \begin{table}[t]
@@ -161,14 +172,14 @@ Damit ergeben sich vier Schwachstellen. Erstens fehlt jede Zielinformation, soda
 
 Fünftens: \emph{Das Zielfeld lässt sich gar nicht betreten.} Der Generator schreibt den Marker \texttt{'S'} auf das Feld $(0,0)$, das aus Sicht des Agenten das Ziel ist. Die Wahrnehmung behandelt diesen Marker ausdrücklich als begehbar, \texttt{valid\_move()} verlangt dagegen den Wert \texttt{0} -- und in Python ist \texttt{'S' == 0} falsch. Wahrnehmung und Bewegung widersprechen sich also: Der Agent sieht ein freies Feld, auf das er nicht treten kann. In der Konsequenz kann der Bonus von 10 nie vergeben werden, die maximal erreichbare Fitness sinkt auf rund 32,9, und die Schwelle von 40,0 ist unerreichbar. Ein Kontrolllauf über 100 Generationen endet entsprechend mit einer besten Fitness von 22,24, wobei der Agent auf dem Nachbarfeld des Ziels stehen bleibt.
 
-Die ersten beiden Punkte sind die Stellschrauben dieser Arbeit. Der dritte wird für alle Varianten gleich gehalten; der vierte und der fünfte sind Fehler und werden vor der ersten Messung behoben (Kapitel~\ref{sec:vorgehen}).
+Die ersten beiden Punkte sind die Stellschrauben dieser Arbeit. Der dritte wird für alle Varianten gleich gehalten. Der vierte und der fünfte sind Fehler und werden vor der ersten Messung behoben (Kapitel~\ref{sec:vorgehen}).
 
 %% ===========================================================================
 \section{Vorgehen}
 \label{sec:vorgehen}
 
 \subsection{Varianten}
-Das Vorgehen folgt einem klassischen Versuchsaufbau: eine Referenz und darauf aufbauend Varianten, bei denen jeweils genau eine Stellschraube verändert wird. Die Hypothesen habe ich bewusst vor der ersten Messung notiert, weil sich Messergebnisse im Nachhinein fast immer irgendwie erklären lassen. Drei Dinge werden vorab geklärt, die selbst nicht untersucht werden. Erstens wird die Erreichbarkeit des Ziels hergestellt. Dazu entscheidet nicht mehr jede Stelle für sich, was begehbar ist, sondern eine gemeinsame Methode, die Wahrnehmung und Bewegung benutzen -- zwei getrennte Prüfungen derselben Eigenschaft können sonst erneut auseinanderlaufen. Zweitens wird \texttt{feed\_forward} auf \texttt{True} gesetzt, passend zum verwendeten Netztyp; ohne diese Korrektur wären besonders die Aussagen zu den Mutationsraten nicht interpretierbar. Drittens bleibt Backtracking für alle Varianten ausgeschaltet, wird also konstant gehalten statt korrigiert. Alles drei gilt auch für die Referenz V0, damit die Vergleichbarkeit erhalten bleibt.
+Das Vorgehen folgt einem klassischen Versuchsaufbau: eine Referenz und darauf aufbauend Varianten, bei denen jeweils genau eine Stellschraube verändert wird. Die Hypothesen habe ich bewusst vor der ersten Messung notiert, weil sich Messergebnisse im Nachhinein fast immer irgendwie erklären lassen. Drei Dinge werden vorab geklärt, die selbst nicht untersucht werden. Erstens wird die Erreichbarkeit des Ziels hergestellt. Dazu entscheidet nicht mehr jede Stelle für sich, was begehbar ist, sondern eine gemeinsame Methode, die Wahrnehmung und Bewegung benutzen -- zwei getrennte Prüfungen derselben Eigenschaft können sonst erneut auseinanderlaufen. Zweitens wird \texttt{feed\_forward} auf \texttt{True} gesetzt, passend zum verwendeten Netztyp. Ohne diese Korrektur wären besonders die Aussagen zu den Mutationsraten nicht interpretierbar. Drittens bleibt Backtracking für alle Varianten ausgeschaltet, wird also konstant gehalten statt korrigiert. Alles drei gilt auch für die Referenz V0, damit die Vergleichbarkeit erhalten bleibt.
 
 Der Sichtradius $r$ bezeichnet die Anzahl der Felder, die der Agent in jede Richtung sieht, was $(2r+1)^2-1$ Umgebungsfeldern entspricht: 8 Felder bei $r=1$, 24 bei $r=2$ und 48 bei $r=3$. Die Zielrichtung kommt als zwei auf $[-1,1]$ normierte Eingaben $\Delta x$ und $\Delta y$ hinzu, jeweils die Differenz der Koordinaten geteilt durch $\texttt{MAP\_SIZE}-1$. Die Normierung sorgt dafür, dass die Zielrichtung dieselbe Größenordnung hat wie die Wandeingaben und nicht allein durch ihren Zahlenwert dominiert. Tabelle~\ref{tab:varianten} zeigt die Varianten. V2 ist die Kontrolle zu V1: Sie vergrößert die Eingabe, ohne die Zielrichtung zu verraten, und zeigt damit, ob die \emph{Art} oder nur die \emph{Menge} der Information hilft.
 
@@ -199,7 +210,7 @@ Der Sichtradius $r$ bezeichnet die Anzahl der Felder, die der Agent in jede Rich
 \textbf{H4: Die NEAT-Parameter wirken schwächer als die Wahrnehmung.} Populationsgröße, \texttt{compatibility\_\allowbreak threshold} sowie \texttt{conn\_add\_prob} und \texttt{node\_add\_prob} verschieben die Ergebnisse messbar, aber in kleinerem Umfang als der Wechsel von V0 auf V1, weil Parameter nur steuern, wie schnell und breit gesucht wird, und keine Strategie ermöglichen können, die sich mit den vorhandenen Eingaben nicht darstellen lässt.
 
 \subsection{Messgrößen und Versuchsaufbau}
-Die Parameterstudie zu H4 läuft nicht auf allen Varianten, sondern nur auf der besten Wahrnehmungsvariante, und variiert jeweils einen Parameter um seinen Ausgangswert herum (\texttt{pop\_size} 250/500/1000, \texttt{compatibility\_}\allowbreak\texttt{threshold} 2,0/2,8/3,5, \texttt{conn\_add\_prob} 0,3/0,5/0,7, \texttt{node\_add\_prob} 0,1/0,3/0,5). Eine vollständige Kombination aller Varianten mit allen Werten wäre bei 1000 Individuen und bis zu 100 Generationen zeitlich nicht sinnvoll durchführbar.
+Die Parameterstudie zu H4 läuft nicht auf allen Varianten, sondern nur auf einer, und variiert jeweils einen Parameter um seinen Ausgangswert herum: \texttt{pop\_size} 250/500/1000, \texttt{compatibility\_}\allowbreak\texttt{threshold} 2,6/2,8/3,2, \texttt{conn\_add\_prob} 0,3/0,5/0,7 und \texttt{node\_add\_prob} 0,1/0,3/0,5. Eine vollständige Kombination aller Varianten mit allen Werten wäre bei 1000 Individuen und bis zu 100 Generationen zeitlich nicht sinnvoll durchführbar. Als Grundlage dient V1. Ursprünglich war dafür die beste Wahrnehmungsvariante vorgesehen, doch V1 und V3 erwiesen sich in der Hauptmessung als nicht unterscheidbar. Bei Gleichstand hätte die automatische Wahl V3 genommen und für denselben Erkenntnisgewinn rund 40\,\% längere Läufe gekostet.
 
 Erfasst werden pro Lauf die \emph{Erfolgsquote} (Anteil der Wiederholungen, in denen das Ziel innerhalb von 100 Generationen erreicht wurde), die \emph{Generationen bis zur Lösung}, die \emph{beste Fitness} -- als einzige Kennzahl auch für erfolglose Läufe aussagekräftig -- und die \emph{Schritte bis zum Ziel} des besten Agenten als Maß dafür, ob eine Lösung effizient oder eher zufällig zustande kam.
 
@@ -212,11 +223,145 @@ Ausgewertet wird je Variante über Mittelwert und Streuung der Messgrößen sowi
 
 \section{Durchführung}
 \label{sec:durchfuehrung}
-Code-Diffs, code erklären, Metriken, Seeds/Mazes.
+Der vollständige Quelltext liegt diesem Bericht als gepacktes Archiv bei, deshalb beschreibt dieses Kapitel die Umsetzung, ohne sie abzudrucken. Es handelt sich um eine Einzelarbeit, Entwurf, Implementierung, Messung und Auswertung stammen vollständig von mir.
+
+Alle Varianten laufen über denselben Codepfad. Die Stellschrauben stehen als Konstanten am Kopf von \texttt{agent\_neat.py}, nämlich \texttt{RADIUS}, \texttt{USE\_GOAL\_DIR}, \texttt{ALLOW\_BACK\allowbreak TRACK} und \texttt{WALL\_PROBABILITY}. Eine eigene Methode je Hypothese wäre naheliegender gewesen, hätte aber fünf Kopien derselben Logik erzeugt. Die driften im Lauf der Arbeit auseinander und entwerten genau den Vergleich, um den es geht.
+
+\subsection{Änderungen am Code}
+Tabelle~\ref{tab:aenderungen} fasst die Eingriffe zusammen.
+
+Der wichtigste Nachweis ist der zur verallgemeinerten Wahrnehmung. Das Verhalten eines Agenten hängt ausschließlich vom Eingabevektor ab. Stimmt der neue Vektor an jeder Position mit dem alten überein, sind die Trainingsläufe zwangsläufig identisch, und das lässt sich prüfen, ohne einen einzigen vollen Lauf zu rechnen oder Seeds vergleichen zu müssen.
+
+Ein Muster zieht sich durch mehrere Eingriffe: Statt dieselbe Eigenschaft an zwei Stellen zu prüfen, gibt es jeweils eine Quelle. \texttt{\_is\_free()} beantwortet für Wahrnehmung und Bewegung gemeinsam, ob ein Feld begehbar ist, und \texttt{input\_size()} misst die Vektorlänge an einem Probe-Agenten, statt sie aus \texttt{RADIUS} nachzurechnen. Der ursprüngliche Fehler mit dem unbetretbaren Zielfeld war genau ein Fall von zwei Prüfungen, die auseinandergelaufen sind.
+
+\begin{table*}[t]
+  \caption{Eingriffe in den Code und die Messung, mit der ich sie abgenommen habe. Die ersten beiden beheben die Fehler aus Abschnitt~\ref{sec:schwachstellen}, die übrigen schaffen die Stellschrauben.}
+  \label{tab:aenderungen}
+  \small
+  %% Linksbuendig statt Blocksatz: im Blocksatz reisst der schmale Text Loecher
+  %% zwischen die Woerter und trennt die Bezeichner mitten durch.
+  \renewcommand{\arraystretch}{1.25}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.30\textwidth}>{\raggedright\arraybackslash}p{0.66\textwidth}@{}}
+    \toprule
+    Änderung & Nachweis \\
+    \midrule
+    Zielfeld begehbar, \texttt{\_is\_free()} als einzige Quelle
+      & vorher bei rund 32,9 gedeckelt, Kontrolllauf 22,24 und der Agent bleibt auf dem Nachbarfeld stehen, danach wird das Ziel erreicht \\
+    \texttt{feed\_forward} auf \texttt{True}
+      & 30 Generationen, Population 150, gleicher Seed: vorher 62\,\% der Genome mit Zyklus, danach 0\,\% \\
+    Wahrnehmung über \texttt{RADIUS} verallgemeinert
+      & 3125 Positionen auf fünf Karten, Eingabevektor alt gegen neu bei Radius 1: 0 Abweichungen \\
+    \texttt{num\_inputs} zur Laufzeit aus der gemessenen Länge
+      & für Radius 1, 2 und 3 stimmen \texttt{num\_inputs}, \texttt{input\_keys}, gemessene Vektorlänge und ein echter Zwei-Generationen-Lauf überein \\
+    Zielrichtung als zwei optionale Eingänge
+      & Vektorlänge 8, 24 und 48 jeweils plus 2, Werte durchgehend im Bereich $[-1,0]$ \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\subsection{Karten, Seeds und Ablauf}
+Wiederholung $i$ benutzt Labyrinth $i$ und Lauf-Seed $i$. Beide Zufallsquellen sind getrennt: \texttt{MapGenerator.generate(seed)} zieht aus einem eigenen \texttt{random.Random(seed)} und fasst den globalen Strom nicht an, während \texttt{seed\_run(seed)} den globalen Generator setzt, aus dem \texttt{neat-python} Startpopulation, Mutationen und Elternauswahl bezieht. Ursprünglich war eine feste Reihenfolge aus Neusetzen und Kartenbau geplant. Die Trennung ist robuster, weil der Runner beim Bauen von zehn Karten hintereinander keine Reihenfolge mehr verletzen kann, ohne dass es auffällt.
+
+Vier Skripte teilen sich die Arbeit. \texttt{experiment.py} rechnet die Wahrnehmungsvarianten, \texttt{sweep.py} die Parameterstudie, \texttt{ablation.py} die Kontrollvariante V1K, und \texttt{auswertung.py} erzeugt aus den CSV-Dateien alle Abbildungen und Tabellen dieses Berichts. Im Batch bleibt die Tkinter-Oberfläche aus, weil \texttt{mainloop()} sonst blockiert. Jeder Lauf schreibt seine Zeile sofort, damit ein Abbruch nach Stunden nicht die ganze Messreihe kostet.
+
+Zwei Prüfgrößen tauchen in den Ergebnissen mehrfach auf. Der \emph{Vorzeichentest} zählt, auf wie vielen Karten die eine Variante gewinnt und auf wie vielen die andere. Sind beide gleich gut, ist jede Richtung gleich wahrscheinlich, und $k$ gleichgerichtete Karten haben die Wahrscheinlichkeit $0{,}5^k$. Daraus folgt eine harte Grenze des Aufbaus: Unterscheiden sich zwei Varianten nur auf zwei Karten, ist Signifikanz von vornherein unmöglich. Der \emph{Permutationstest} mischt die Ergebnisse innerhalb jeder Karte neu durch und hält damit die Kartenschwierigkeit fest. Er beantwortet, wie oft allein durch Zufall so große Unterschiede zwischen den Konfigurationen entstehen wie die gemessenen.
+
+\subsection{Verworfene Erweiterung}
+Die zehn Karten der Hauptmessung werden von vielen Konfigurationen gelöst, was die Varianten schlecht trennt. Naheliegend war, die Wanddichte anzuheben. Ein Pilot über acht Karten zeigte bei 0,30 und 0,35 aber das Gegenteil: Der Anteil der Karten, die überhaupt trennen, sank von 20\,\% auf 12\,\%, weil an die Stelle des Deckeneffekts ein Bodeneffekt trat. Die Sackgassen stiegen dabei von 30 auf 54 je Karte, während der kürzeste Weg mit 48 auf 53 Schritten fast gleich blieb.
+
+Bei der Fitness sah 0,35 zunächst besser aus, V1 lag auf 7 von 8 Karten vorn. Für den entscheidenden Vorversuch habe ich das Kriterium deshalb vorher aufgeschrieben, nämlich mindestens 4 von 5 Karten je Vergleichspaar. Erreicht wurden 3 von 5. Damit blieb \texttt{WALL\_PROBABILITY} bei 0,25, und der Wert ist seither eine Konstante statt eines beiläufig veränderlichen Parameters. Das vorab notierte Kriterium hat sich bewährt, weil das Ergebnis genau an der Grenze lag und ohne Festlegung in beide Richtungen deutbar gewesen wäre.
 
 \section{Ergebnisse}
 \label{sec:ergebnisse}
-Nur Fakten/Messwerte, Diagramme pro Konfiguration.
+In die Auswertung sind 237 Läufe mit zusammen 4,1 Stunden Rechenzeit eingegangen: 50 für die Hauptmessung, 30 für die Replikation auf frischen Karten, 20 für die Ablation, 80 für die Parameterstudie und 57 für die beiden Vorversuche zur Wanddichte. Dieses Kapitel nennt nur die Messwerte, die Deutung steht in Kapitel~\ref{sec:diskussion}.
+
+\begin{table}[t]
+  \caption{Hauptmessung über zehn Karten. \enquote{Eing.} ist die Länge des Eingabevektors, V1K die Ablationsvariante aus Abschnitt~\ref{sec:ablation}.}
+  \label{tab:ergebnisse}
+  \small
+  \input{ergebnistabelle}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{abbildungen/loesungsmatrix}
+  \Description{Matrix aus 14 Zeilen und 10 Spalten. Gefüllte Quadrate stehen für gelöste Läufe. Die Spalten unterscheiden sich stark, die Zeilen kaum.}
+  \caption{Alle 14 Konfigurationen gegen die zehn Karten der Hauptmessung, ein Quadrat je Lauf. Fünf Karten lösen alle Konfigurationen, zwei fast keine. Die Zeilen unterscheiden sich deutlich weniger als die Spalten. V0 und V2 lösen dieselben Karten, V1 und V3 ebenfalls.}
+  \label{abb:matrix}
+\end{figure}
+
+\subsection{Wahrnehmungsvarianten}
+Tabelle~\ref{tab:ergebnisse} fasst die Hauptmessung zusammen. V1 und V3 lösen je 8 von 10 Karten, V0 und V2 je 6, V4 löst 7. Abbildung~\ref{abb:matrix} zeigt dieselben Läufe einzeln statt gemittelt.
+
+Der paarweise Vergleich fällt schärfer aus als die Quoten. V0 und V2 lösen exakt dieselbe Kartenmenge $\{1,2,3,5,6,9\}$, V1 und V3 exakt dieselbe Menge $\{0,1,2,3,5,6,8,9\}$. Der Sprung von Radius~1 auf Radius~2 verändert also in beiden Bedingungen nicht, welche Karten fallen. Er kostet dabei das 1,66-Fache an Rechenzeit (86 statt 52\,s je Lauf ohne Zielrichtung, 79 statt 48\,s mit).
+
+V4 löst Karte~1 nicht, die alle anderen Varianten lösen. Auf den sieben Karten, die V3 und V4 gemeinsam lösen, braucht V4 im Mittel 52,7 statt 28,9 Generationen und ist auf sechs der sieben Karten langsamer. Ein Lauf von V4 dauert 181\,s, das 3,8-Fache von V1.
+
+Abbildung~\ref{abb:verlauf} zeigt den Verlauf der bis dahin besten Fitness. V0 steigt in den ersten zehn Generationen am schnellsten, V4 durchgehend am langsamsten. V1 und V3 liegen am Ende am höchsten.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{abbildungen/fitness_verlauf}
+  \Description{Fünf Linien über 100 Generationen. Alle steigen steil an und laufen zwischen Fitness 31 und 39 aus.}
+  \caption{Beste bisher erreichte Fitness je Generation, gemittelt über die zehn Läufe. Gelöste Läufe enden vorzeitig und werden mit ihrem Endwert fortgeschrieben, damit der Mittelwert nicht springt, wenn sich die Zahl der noch laufenden Wiederholungen ändert.}
+  \label{abb:verlauf}
+\end{figure}
+
+\subsection{Verhalten der Kennzahlen}
+\label{sec:kennzahlen}
+Alle 139 gelösten Läufe erreichen exakt dieselbe Fitness von 43,94113, also genau den in Abschnitt~2.2 hergeleiteten Höchstwert $10+\sqrt{24^2+24^2}$. Der beste ungelöste Lauf im gesamten Datensatz kommt auf 22,04. Zwischen 22,04 und 43,94 liegt kein einziger Messwert.
+
+Damit fällt die konfigurierte Fitness-Schwelle von 40,0 mit dem Erreichen des Ziels zusammen: In allen 237 Läufen ist die Generation, in der die Schwelle überschritten wird, dieselbe wie die, in der zum ersten Mal ein Agent das Ziel betritt.
+
+Die Schrittzahl des besten Agenten liegt zwischen 48 und 60, bei kürzesten Wegen von 48 bis 50, und stimmt in 108 der 139 gelösten Läufe mit dem kürzesten Weg überein. Die übrigen 31 Läufe brauchen bis zu zehn Schritte mehr und erreichen trotzdem dieselbe Fitness. Das entspricht der Formel: Der Abzug von 0,1 je Schritt und der Bonus von 0,1 je gültigem Schritt heben sich auf, sodass allein ungültige Schritte Fitness kosten.
+
+Über die 14 Konfigurationen hinweg ist die mittlere beste Fitness fast vollständig durch die Zahl der gelösten Karten bestimmt. Innerhalb einer Lösungszahl streut sie um 0,3 bis 2,8 Punkte, zwischen benachbarten Lösungszahlen um 2,5 bis 5,5.
+
+\subsection{Unterschiede zwischen den Karten}
+Die zehn Karten der Hauptmessung tragen 22,6\,\% bis 29,0\,\% Wände, ihr kürzester Weg ist 48 oder 50 Schritte lang. Ihre Ergebnisse gehen weit auseinander (Fußzeile in Abbildung~\ref{abb:matrix}): Die Karten 2, 3, 5, 6 und 9 lösen alle 14 Konfigurationen, Karte~7 löst genau eine und Karte~4 drei. Nur die Karten 0, 1 und 8 werden von einem Teil der Konfigurationen gelöst und von einem anderen nicht.
+
+Der Permutationstest über alle 14 Konfigurationen ergibt $p=0{,}426$. Getrennt gerechnet liegt er für die sechs Wahrnehmungsvarianten bei $p=0{,}46$ und für die Parameterstudie bei $p=0{,}48$. Kein Paarvergleich einer einzelnen Konfiguration gegen V1 kommt im Vorzeichentest unter $p=0{,}5$.
+
+\subsection{Replikation und Ablation}
+\label{sec:ablation}
+Auf den zehn frischen Karten 10 bis 19 kehrt sich das Bild der Hauptmessung um: V0 löst dort 8 Karten, V1 nur 6, und V1 liegt in der mittleren Fitness 6,55 Punkte unter V0. Über beide Kartensätze zusammen lösen V0 und V1 je 14 von 20 Karten bei einer Fitness-Differenz von $-0{,}28$. Auf zwei Karten gewinnt V1, auf zwei V0.
+
+Die Ablationsvariante V1K entspricht V1 in Eingabelänge, Netzgröße und Startpopulation, bekommt an den beiden Zielrichtungs-Eingängen aber den konstanten Wert $-0{,}5$ statt der echten Werte. Sie löst auf den Karten 0 bis 9 dieselben sechs Karten wie V0 und V2, über alle 20 Karten 13 von 20 gegenüber 14 von 20 bei V0. Auf den zwölf Karten, die V1 und V1K beide lösen, braucht V1K im Mittel 11,2 statt 16,1 Generationen und ist auf 7 der 12 Karten schneller ($p=0{,}55$).
+
+Abbildung~\ref{abb:replikation} stellt die vier auf allen zwanzig Karten gemessenen Konfigurationen gegenüber. Auf den Karten 0 bis 9 lösen genau die Varianten mit Zielrichtung die Karten 0 und 8, auf den frischen Karten verschwindet diese Trennung. V3 erreicht dort dieselben acht Karten wie V0, und V1K löst Karte~11, die V1 verfehlt. Über alle zwanzig Karten lösen die beiden Varianten mit Zielrichtung im Mittel 15,0 Karten, die beiden ohne 13,5. Der Permutationstest dazu ergibt $p=0{,}357$, und alle paarweisen Vorzeichentests liegen bei $p\geq 0{,}5$.
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\textwidth]{abbildungen/replikation}
+  \Description{Matrix aus vier Zeilen und 20 Spalten, getrennt nach zehn bekannten und zehn frischen Karten. Links trennen die Karten 0 und 8 nach Zielrichtung, rechts nicht.}
+  \caption{Die vier Konfigurationen, die auf allen zwanzig Karten gerechnet wurden. Links die zehn Karten der Hauptmessung, rechts zehn vorher ungenutzte. Die Trennung nach Zielrichtung auf den Karten 0 und 8 wiederholt sich rechts nicht.}
+  \label{abb:replikation}
+\end{figure*}
+
+\subsection{NEAT-Parameter}
+Tabelle~\ref{tab:sweep} zeigt die Parameterstudie, Abbildung~\ref{abb:sweep} ihre Erfolgsquoten. Der Referenzpunkt stammt aus der Hauptmessung und wurde nicht erneut gerechnet.
+
+Keine der acht Konfigurationen unterscheidet sich im Vorzeichentest von der Referenz. Alle Werte liegen bei $p\geq 0{,}5$. Die höchste Quote erreicht \texttt{compatibility\_threshold} $=2{,}6$ mit 9 von 10 Karten. Der Unterschied zur Referenz besteht aus genau einer Karte, nämlich Karte~7, an der die übrigen 13 Konfigurationen scheitern.
+
+Deutlich sind dagegen die Aufwandsunterschiede. Die Generationen bis zum Ziel hängen im untersuchten Bereich nicht erkennbar von der Populationsgröße ab (25,7 bei 250, 13,2 bei 500, 33,5 bei 1000). Die Zahl der Fitness-Auswertungen bis zum Ziel folgt deshalb der Populationsgröße: 6\,667 bei \texttt{pop\_size} $=250$, 7\,083 bei 500 und 34\,500 bei 1000. Ein Lauf dauert entsprechend 13, 24 und 48 Sekunden. Dabei ist zu beachten, dass die Obergrenze von 100 Generationen ein Generationenbudget ist: Ein Lauf mit 250 Individuen darf insgesamt 25\,000 Agenten bewerten, einer mit 1000 Individuen 100\,000.
+
+\begin{table}[t]
+  \caption{Parameterstudie auf den zehn Karten der Hauptmessung, jeweils ein Parameter gegenüber V1 verändert. \enquote{Eval.} ist die Zahl der Fitness-Auswertungen bis zum Ziel, also \texttt{pop\_size} mal Generationen. Sie ist nötig, weil Generationen über verschiedene Populationsgrößen hinweg nicht vergleichbar sind.}
+  \label{tab:sweep}
+  \small
+  \input{sweeptabelle}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=\columnwidth]{abbildungen/parameter_sweep}
+  \Description{Vier kleine Liniendiagramme der Erfolgsquote über je drei Parameterwerte. Alle Quoten liegen zwischen 60 und 90 Prozent.}
+  \caption{Erfolgsquote je Parameterwert. Der hohle Punkt ist der Referenzwert aus der Hauptmessung.}
+  \label{abb:sweep}
+\end{figure}
+
+%% PROVISORIUM, siehe Praeambel: raus, sobald hier Text steht.
+\FloatBarrier
 
 \section{Diskussion}
 \label{sec:diskussion}
